@@ -1,0 +1,1228 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OIDC Mail Roundcube Demo</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8f9fa;
+            --bg-tertiary: #e9ecef;
+            --text-primary: #1a1a1a;
+            --text-secondary: #6c757d;
+            --text-muted: #adb5bd;
+            --border-color: #dee2e6;
+            --shadow: rgba(0, 0, 0, 0.1);
+
+            --accent-primary: #0066cc;
+            --accent-primary-hover: #0052a3;
+            --accent-success: #28a745;
+            --accent-success-hover: #218838;
+            --accent-danger: #dc3545;
+            --accent-danger-hover: #c82333;
+            --accent-warning: #ffc107;
+
+            --status-ok-bg: #d4edda;
+            --status-ok-text: #155724;
+            --status-error-bg: #f8d7da;
+            --status-error-text: #721c24;
+
+            --alert-info-bg: rgba(0, 102, 204, 0.08);
+            --alert-warning-bg: rgba(255, 193, 7, 0.08);
+
+            --log-bg: #1e1e1e;
+            --log-text: #e0e0e0;
+            --log-border: #333333;
+            --log-info: #0066cc;
+            --log-success: #28a745;
+            --log-error: #dc3545;
+            --log-warning: #ffc107;
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #0f1419;
+            --bg-secondary: #1a2332;
+            --bg-tertiary: #253449;
+            --text-primary: #e8eef7;
+            --text-secondary: #a8b8d0;
+            --text-muted: #6f7f9f;
+            --border-color: #3a4a6a;
+            --shadow: rgba(0, 0, 0, 0.6);
+
+            --accent-primary: #4fa3ff;
+            --accent-primary-hover: #6cb3ff;
+            --accent-success: #52d273;
+            --accent-success-hover: #72e293;
+            --accent-danger: #f55577;
+            --accent-danger-hover: #ff7799;
+            --accent-warning: #ffc549;
+
+            --status-ok-bg: #1a3d2a;
+            --status-ok-text: #6fee9e;
+            --status-error-bg: #3d1a25;
+            --status-error-text: #ff8fa3;
+
+            --alert-info-bg: rgba(79, 163, 255, 0.12);
+            --alert-warning-bg: rgba(255, 197, 73, 0.12);
+
+            --log-bg: #0a0f18;
+            --log-text: #d8e0f0;
+            --log-border: #2a3a5a;
+            --log-info: #4fa3ff;
+            --log-success: #52d273;
+            --log-error: #f55577;
+            --log-warning: #ffc549;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            padding: 20px;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: var(--bg-primary);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px var(--shadow);
+            padding: 30px;
+            border: 1px solid var(--border-color);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid var(--accent-primary);
+        }
+
+        h1 {
+            color: var(--text-primary);
+            font-size: 28px;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .themes-div {
+            display: inline;
+            float: right;
+        }
+
+        .theme-toggle {
+            display: inline;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 18px;
+            color: var(--text-primary);
+            transition: all 0.2s ease;
+            /* Fixed width */
+            width: 50px;
+            /* Distance from the right edge of the viewport */
+            right: 20px;
+        }
+
+        .theme-toggle:hover {
+            background: var(--bg-tertiary);
+            transform: scale(1.05);
+        }
+
+        .top-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .config-section,
+        .user-setup-section {
+            background: var(--bg-secondary);
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        h2,
+        h3 {
+            color: var(--text-primary);
+            margin-bottom: 15px;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .config-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--bg-primary);
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        .config-table th {
+            background: var(--accent-primary);
+            color: white;
+            padding: 10px 12px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .config-table td {
+            padding: 10px 12px;
+            font-size: 13px;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .config-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .status.ok {
+            background: var(--status-ok-bg);
+            color: var(--status-ok-text);
+        }
+
+        .status.missing {
+            background: var(--status-error-bg);
+            color: var(--status-error-text);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 14px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            transition: border-color 0.2s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px rgba(79, 163, 255, 0.25);
+        }
+
+        .form-group small {
+            color: var(--text-secondary);
+            font-size: 12px;
+            display: block;
+            margin-top: 5px;
+        }
+
+        .button-container {
+            display: flex;
+            gap: 10px;
+            margin-top: auto;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: var(--accent-primary);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: var(--accent-primary-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-success {
+            background: var(--accent-success);
+            color: white;
+        }
+
+        .btn-success:hover:not(:disabled) {
+            background: var(--accent-success-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: var(--border-color);
+        }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            border-left: 4px solid;
+        }
+
+        .alert.info {
+            background: var(--alert-info-bg);
+            border-color: var(--accent-primary);
+            color: var(--text-primary);
+        }
+
+        .alert.warning {
+            background: var(--alert-warning-bg);
+            border-color: var(--accent-warning);
+            color: var(--text-primary);
+        }
+
+        .alert.error {
+            background: var(--status-error-bg);
+            border-color: var(--accent-danger);
+            color: var(--status-error-text);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .log-section {
+            background: var(--log-bg);
+            color: var(--log-text);
+            padding: 20px;
+            border-radius: 8px;
+            height: 240px;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid var(--log-border);
+        }
+
+        .log-section h3 {
+            color: var(--log-text);
+            margin-bottom: 12px;
+            font-size: 16px;
+        }
+
+        .log-pane {
+            flex: 1;
+            background: var(--log-bg);
+            border: 1px solid var(--log-border);
+            border-radius: 4px;
+            padding: 12px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        .log-pane::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .log-pane::-webkit-scrollbar-track {
+            background: var(--log-bg);
+        }
+
+        .log-pane::-webkit-scrollbar-thumb {
+            background: var(--log-border);
+            border-radius: 4px;
+        }
+
+        .log-entry {
+            margin-bottom: 6px;
+            padding: 4px 0;
+        }
+
+        .log-time {
+            color: var(--text-muted);
+            margin-right: 8px;
+        }
+
+        .log-level {
+            font-weight: 600;
+            margin-right: 8px;
+        }
+
+        .log-level.info {
+            color: var(--log-info);
+        }
+
+        .log-level.success {
+            color: var(--log-success);
+        }
+
+        .log-level.error {
+            color: var(--log-error);
+        }
+
+        .log-level.warning {
+            color: var(--log-warning);
+        }
+
+        .log-message {
+            color: var(--log-text);
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 8px 32px var(--shadow);
+        }
+
+        .modal h3 {
+            color: var(--text-primary);
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+
+        .modal p {
+            color: var(--text-secondary);
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 3px solid var(--border-color);
+            border-top: 3px solid var(--accent-primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .top-section {
+                grid-template-columns: 1fr;
+            }
+
+            .button-container {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>OIDC Mail Demo</h1>
+            <div class="themes-div">
+                <button id="theme-toggle" class="theme-toggle" title="Toggle Theme">
+                    <i id="theme-icon" class="bi bi-moon-stars"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="top-section">
+            <div id="config-section" class="config-section hidden">
+                <h2>Configuration</h2>
+                <table id="config-table" class="config-table"></table>
+            </div>
+
+            <div class="user-setup-section">
+                <h3>User Setup</h3>
+                <div class="form-group">
+                    <label for="test-username">Username</label>
+                    <input type="text" id="test-username" placeholder="Enter username (e.g., testuser123)" value="">
+                    <small>Email and password will be auto-generated from configuration settings</small>
+                </div>
+
+                <div id="error-alert" class="alert error hidden"></div>
+                <div id="warning-alert" class="alert warning hidden"></div>
+
+                <div class="button-container">
+                    <button id="btn-go" class="btn-primary">▶ Register</button>
+                    <button id="btn-webmail" class="btn-success">Roundcube</button>
+                    <button id="btn-clear" class="btn-secondary">Reset</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="log-section">
+            <h3>Activity Log</h3>
+            <div id="log-pane" class="log-pane">
+                <div class="log-entry">
+                    <span class="log-time">[Ready]</span>
+                    <span class="log-level info">[INFO]</span>
+                    <span class="log-message">Waiting for input...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="oidc-modal" class="modal-overlay">
+        <div class="modal">
+            <h3>OIDC Authentication Required</h3>
+            <p>
+                To complete the setup, we need to authenticate with Keycloak and Stalwart.
+                This will open a new window for authentication. After you log in, the process will continue
+                automatically.
+            </p>
+            <p style="font-weight: 600;">
+                Username: <span id="modal-username"></span><br>
+                Email: <span id="modal-email"></span>
+            </p>
+            <div class="modal-buttons">
+                <button class="btn-secondary" onclick="closeOidcModal()">Cancel</button>
+                <button class="btn-primary" onclick="confirmOidcAuth()">Continue</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let config = null;
+        let testState = {
+            keycloakUserId: null,
+            testEmail: null,
+            testUsername: null,
+            accessToken: null,
+            initialUnseenCount: null,
+            finalUnseenCount: null,
+            oidcAuthWindow: null,
+            oidcAuthData: null
+        };
+
+        function getApiBase() {
+            if (window.location.origin && !window.location.origin.includes('file://')) {
+                return `${window.location.origin}/api`;
+            }
+            return 'http://localhost:3010/api';
+        }
+        const API_BASE = getApiBase();
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initThemeToggle();
+            setupEventListeners();
+            loadConfiguration();
+        });
+
+        function initThemeToggle() {
+            const themeToggle = document.getElementById('theme-toggle');
+            const themeIcon = document.getElementById('theme-icon');
+            const savedTheme = localStorage.getItem('theme') || 'light';
+
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            updateThemeIcon(savedTheme);
+
+            themeToggle.addEventListener('click', () => {
+                const currentTheme = document.documentElement.getAttribute('data-theme');
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+                document.documentElement.setAttribute('data-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+                updateThemeIcon(newTheme);
+
+                log('info', `Switched to ${newTheme} mode`);
+            });
+
+            function updateThemeIcon(theme) {
+                themeIcon.className = theme === 'dark' ? 'bi bi-sun' : 'bi bi-moon-stars';
+            }
+        }
+
+        function setupEventListeners() {
+            document.getElementById('btn-go').addEventListener('click', runWorkflow);
+            document.getElementById('btn-webmail').addEventListener('click', openWebmail);
+            document.getElementById('btn-clear').addEventListener('click', clearReset);
+
+            document.getElementById('test-username').addEventListener('input', (e) => {
+                if (config && e.target.value) {
+                    const email = `${e.target.value}@${config.internalEmailDomain || 'workinpilot.space'}`;
+                }
+            });
+        }
+
+        async function loadConfiguration() {
+            try {
+                log('info', 'Loading configuration from backend...');
+                const response = await fetch(`${API_BASE}/test/oidc-stalwart/config`);
+                const data = await response.json();
+
+                if (!data.success) {
+                    throw new Error(data.error || 'FAIL: Failed to load configuration');
+                }
+
+                config = data;
+                displayConfiguration(data);
+                log('success', 'OK: Configuration loaded successfully');
+            } catch (error) {
+                log('error', `Failed to load configuration: ${error.message}`);
+                showAlert('error', `Configuration Error: ${error.message}`);
+            }
+        }
+
+        function displayConfiguration(data) {
+            const table = document.getElementById('config-table');
+            const configSection = document.getElementById('config-section');
+
+            const rows = [
+                { resource: 'Mail Provider', configured: data.provider === 'stalwart' ? 'OK' : 'FAIL', url: data.provider, status: data.provider === 'stalwart' ? 'ok' : 'missing' },
+                { resource: 'Stalwart Mail', configured: data.stalwart?.baseUrl ? 'OK' : 'FAIL', url: data.stalwart?.baseUrl || 'Not configured', status: data.stalwart?.baseUrl ? 'ok' : 'missing' },
+                { resource: 'Stalwart API', configured: data.stalwart?.hasApiToken ? 'OK' : 'FAIL', url: data.stalwart?.apiUrl || 'Not configured', status: data.stalwart?.hasApiToken ? 'ok' : 'missing' },
+                { resource: 'Keycloak', configured: (data.keycloak?.url && data.keycloak?.hasAdminClientId && data.keycloak?.hasAdminClientSecret) ? 'OK' : 'FAIL', url: data.keycloak?.url || 'Not configured', status: (data.keycloak?.url && data.keycloak?.hasAdminClientId && data.keycloak?.hasAdminClientSecret) ? 'ok' : 'missing' },
+                { resource: 'Stalwart Client', configured: (data.stalwart?.clientId && data.stalwart?.hasClientSecret) ? 'OK' : 'FAIL', url: data.stalwart?.clientId || 'Not configured', status: (data.stalwart?.clientId && data.stalwart?.hasClientSecret) ? 'ok' : 'missing' },
+                { resource: 'Internal Domain', configured: 'OK', url: data.internalEmailDomain || 'workinpilot.space', status: 'ok' }
+            ];
+
+            table.innerHTML = `
+                <thead>
+                    <tr>
+                        <th>Resource</th>
+                        <th>Up?</th>
+                        <th>URL/Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${rows.map(row => `
+                        <tr>
+                            <td><strong>${row.resource}</strong></td>
+                            <td><span class="status ${row.status}">${row.configured}</span></td>
+                            <td class="value">${row.url}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            `;
+
+            configSection.classList.remove('hidden');
+
+            if (data.provider !== 'stalwart') {
+                showAlert('warning', `Current mail provider is "${data.provider}", but this test requires "stalwart".`);
+            }
+        }
+
+        async function runWorkflow() {
+            const username = document.getElementById('test-username').value.trim();
+
+            if (!username) {
+                showAlert('error', 'Please enter a username');
+                return;
+            }
+
+            if (!config || config.provider !== 'stalwart') {
+                showAlert('error', 'Configuration not loaded or provider is not Stalwart');
+                return;
+            }
+
+            const email = `${username}@${config.internalEmailDomain || 'workinpilot.space'}`;
+            const password = config.webmailDemoPassword || username;
+
+            if (!config.webmailDemoPassword) {
+                log('warning', 'WEBMAIL_DEMO_PASSWORD not set in .env - using username as password (may fail Keycloak validation)');
+            }
+
+            log('info', `Email will be: ${email}`);
+
+            testState = {
+                keycloakUserId: null,
+                testEmail: email,
+                testUsername: username,
+                accessToken: null,
+                initialUnseenCount: null,
+                finalUnseenCount: null,
+                oidcAuthWindow: null,
+                oidcAuthData: null
+            };
+
+            const btn = document.getElementById('btn-go');
+            btn.disabled = true;
+            btn.textContent = '⏳ Running...';
+
+            try {
+                log('info', `Starting workflow for user: ${username} (${email})`);
+                await step1_RegisterKeycloakUser(username, email, password);
+                await step2_PredeployStalwart(email, testState.keycloakUserId, password);
+                await step3_OIDCFlowSimplified(email, password);
+                await step4_SendTestEmail(email);
+                await step5_CheckUnseenCount(username);
+                log('success', 'OK: Workflow completed successfully!');
+                showAlert('info', 'Workflow completed! Check the log for details.');
+            } catch (error) {
+                log('error', `FAIL: Workflow failed: ${error.message}`);
+                showAlert('error', `Workflow Error: ${error.message}`);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '▶ Register';
+            }
+        }
+
+        async function step1_RegisterKeycloakUser(username, email, password) {
+            log('info', `Creating Keycloak user: ${username} (${email})`);
+            const response = await fetch(`${API_BASE}/test/oidc-stalwart/keycloak/create-user`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, email, firstName: username, lastName: 'Test', password })
+            });
+            const data = await response.json();
+            if (!data.success) throw new Error(data.error || 'Failed to create Keycloak user');
+            testState.keycloakUserId = data.userId;
+            log('success', `Keycloak user created with ID: ${data.userId}`);
+        }
+
+        async function step2_PredeployStalwart(email, keycloakUserId, password) {
+            log('info', `Pre-deploying mailbox in Stalwart: ${email}`);
+            if (!keycloakUserId) throw new Error('Keycloak user ID is required');
+            const response = await fetch(`${API_BASE}/test/oidc-stalwart/stalwart/verify-mailbox`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, keycloakUserId, password })
+            });
+            const data = await response.json();
+
+            if (!data.success) {
+                const warn_message = data.error || data.message || 'Issues trying to pre-deploy mailbox';
+                log('warning', warn_message);
+            } else {
+                log('success', data.discovered ? `User discovered in Stalwart: ${email}` : 'OAuth authentication succeeded');
+            }
+        }
+
+        async function step3_OIDCFlowSimplified(email, password) {
+            log('info', 'Initiating OIDC flow...');
+            try {
+                const response = await fetch(`${API_BASE}/test/oidc-stalwart/oidc/get-token`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: testState.testUsername, password, email })
+                });
+                const data = await response.json();
+                if (!data.success) {
+                    log('warning', 'Password grant not available, using authorization flow...');
+                    return await step3_OIDCFlowWithConfirmation(email);
+                }
+                testState.accessToken = data.accessToken;
+                log('success', 'OAuth token obtained successfully');
+                return { success: true, accessToken: data.accessToken };
+            } catch (error) {
+                log('warning', `Direct token acquisition failed: ${error.message}`);
+                return await step3_OIDCFlowWithConfirmation(email);
+            }
+        }
+
+        async function step3_OIDCFlowWithConfirmation(email) {
+            log('info', 'Setting up OIDC authorization flow...');
+            const state = Math.random().toString(36).substring(2, 15);
+            sessionStorage.setItem('oidc_test_state', state);
+            const authResponse = await fetch(`${API_BASE}/test/oidc-stalwart/oidc/authorize`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ state })
+            });
+            const authData = await authResponse.json();
+            if (!authData.success) throw new Error(authData.error || 'Failed to generate authorization URL');
+            testState.oidcAuthData = authData;
+            document.getElementById('modal-username').textContent = testState.testUsername;
+            document.getElementById('modal-email').textContent = email;
+            document.getElementById('oidc-modal').classList.add('active');
+            log('info', 'Please confirm authentication in the dialog');
+            return new Promise((resolve, reject) => {
+                window.oidcConfirmResolve = resolve;
+                window.oidcConfirmReject = reject;
+                setTimeout(() => {
+                    if (window.oidcConfirmResolve) {
+                        window.oidcConfirmResolve = null;
+                        window.oidcConfirmReject = null;
+                        reject(new Error('OIDC flow timed out'));
+                    }
+                }, 300000);
+            });
+        }
+
+        function confirmOidcAuth() {
+            closeOidcModal();
+            log('info', 'Opening Keycloak authentication window...');
+            const authUrl = testState.oidcAuthData.authorizationUrl;
+            testState.oidcAuthWindow = window.open(authUrl, 'oidc_auth', 'width=600,height=700');
+            if (!testState.oidcAuthWindow) {
+                showAlert('error', 'Failed to open authentication window. Check if pop-ups are blocked.');
+                if (window.oidcConfirmReject) {
+                    window.oidcConfirmReject(new Error('Failed to open authentication window'));
+                    window.oidcConfirmResolve = null;
+                    window.oidcConfirmReject = null;
+                }
+                return;
+            }
+            const pollInterval = setInterval(() => {
+                try {
+                    if (testState.oidcAuthWindow.closed) {
+                        clearInterval(pollInterval);
+                        checkForAuthCode();
+                    }
+                } catch (e) { }
+            }, 1000);
+            window.addEventListener('message', handleOidcMessage);
+        }
+
+        function handleOidcMessage(event) {
+            if (event.data && event.data.type === 'oidc_code') {
+                exchangeToken(event.data.code, testState.oidcAuthData.redirectUri)
+                    .then(result => {
+                        log('success', 'OAuth token obtained successfully');
+                        if (window.oidcConfirmResolve) {
+                            window.oidcConfirmResolve(result);
+                            window.oidcConfirmResolve = null;
+                            window.oidcConfirmReject = null;
+                        }
+                    })
+                    .catch(error => {
+                        log('error', `Token exchange failed: ${error.message}`);
+                        if (window.oidcConfirmReject) {
+                            window.oidcConfirmReject(error);
+                            window.oidcConfirmResolve = null;
+                            window.oidcConfirmReject = null;
+                        }
+                    });
+            }
+        }
+
+        async function checkForAuthCode() {
+            const modal = document.createElement('div');
+            modal.className = 'modal-overlay active';
+            modal.innerHTML = `
+                <div class="modal">
+                    <h3>Authorization Code Required</h3>
+                    <p>Please copy the <strong>code</strong> parameter from the redirect URL (look for <code>?code=...</code>).</p>
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label for="auth-code-input">Authorization Code:</label>
+                        <input type="text" id="auth-code-input" placeholder="Paste code here">
+                    </div>
+                    <div class="modal-buttons">
+                        <button class="btn-secondary" onclick="this.closest('.modal-overlay').remove(); cancelAuthCode();">Cancel</button>
+                        <button class="btn-primary" onclick="submitAuthCode(this);">Continue</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            window.authCodeModal = modal;
+        }
+
+        async function submitAuthCode(button) {
+            const code = document.getElementById('auth-code-input').value.trim();
+            if (!code) {
+                alert('Please enter the authorization code');
+                return;
+            }
+            button.disabled = true;
+            button.textContent = 'Processing...';
+            try {
+                await exchangeToken(code, testState.oidcAuthData.redirectUri);
+                log('success', 'OAuth token obtained successfully');
+                if (window.authCodeModal) {
+                    window.authCodeModal.remove();
+                    window.authCodeModal = null;
+                }
+                if (window.oidcConfirmResolve) {
+                    window.oidcConfirmResolve({ success: true });
+                    window.oidcConfirmResolve = null;
+                    window.oidcConfirmReject = null;
+                }
+            } catch (error) {
+                log('error', `Token exchange failed: ${error.message}`);
+                button.disabled = false;
+                button.textContent = 'Continue';
+            }
+        }
+
+        function cancelAuthCode() {
+            if (window.authCodeModal) {
+                window.authCodeModal.remove();
+                window.authCodeModal = null;
+            }
+            if (window.oidcConfirmReject) {
+                window.oidcConfirmReject(new Error('Authorization cancelled'));
+                window.oidcConfirmResolve = null;
+                window.oidcConfirmReject = null;
+            }
+        }
+
+        function closeOidcModal() {
+            document.getElementById('oidc-modal').classList.remove('active');
+        }
+
+        async function exchangeToken(code, redirectUri) {
+            log('info', 'Exchanging authorization code for access token...');
+            const response = await fetch(`${API_BASE}/test/oidc-stalwart/oidc/exchange-token`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code, redirectUri })
+            });
+            const data = await response.json();
+            if (!data.success) throw new Error(data.error || 'Failed to exchange token');
+            testState.accessToken = data.accessToken;
+            return data;
+        }
+
+        async function step4_SendTestEmail(email) {
+            log('info', `Sending test email to ${email}...`);
+            const response = await fetch(`${API_BASE}/test/oidc-stalwart/stalwart/send-mail`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    from: email,
+                    to: email,
+                    subject: 'OIDC/Stalwart Demo Test Email',
+                    text: `Test email from OIDC mail demo.\n\nSent: ${new Date().toISOString()}`,
+                    html: `<p>Test email from OIDC mail demo.</p><p><strong>Sent:</strong> ${new Date().toISOString()}</p>`,
+                    accessToken: testState.accessToken
+                })
+            });
+            const data = await response.json();
+            if (!data.success) throw new Error(data.error || 'Failed to send email');
+            log('success', `Test email sent successfully`);
+        }
+
+        async function step5_CheckUnseenCount(username) {
+            log('info', `Checking unseen count for ${username}...`);
+            const response = await fetch(`${API_BASE}/test/oidc-stalwart/stalwart/get-unseen-count`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, accessToken: testState.accessToken })
+            });
+            const data = await response.json();
+            log('success', `Unseen count: ${data.unseen_count || 0}`);
+        }
+
+        // Function to get the final URL once the page is loaded
+        function getFinalUrl(win) {
+            // Check if the window object is still valid and same-origin policy allows access
+            if (win && !win.closed) {
+                try {
+                    const finalUrl = win.location.href;
+                    console.log('Post-redirect URL:', finalUrl);
+                    return finalUrl;
+                } catch (e) {
+                    // This catches SecurityError if the new window is on a different origin
+                    console.error('Cannot access location due to cross-origin restrictions. ' +
+                        'The final URL may be on a different domain.');
+                    return null;
+                }
+            }
+            return null;
+        }
+
+        async function openWebmail() {
+            if (!config || !config.webmailClient) {
+                showAlert('error', 'Webmail configuration not available');
+                return;
+            }
+
+            if (!testState.testUsername) {
+                showAlert('error', 'Start the workflow first so a user exists');
+                return;
+            }
+
+            const loginHint = `?login_hint=` + testState.testUsername;
+
+            try {
+                log('info', 'Requesting POST of DAG tokens...');
+                const response0 = await fetch(`${API_BASE}/test/post-user-DAG`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: testState.testUsername,
+                        userpass: config.webmailDemoPassword,
+                        targetClientId: config.webmailClient.clientId
+                    })
+                });
+
+                const data0 = await response0.json();
+                if (!response0.ok || !data0.success) {
+                    throw new Error(data0.error || 'Failed to post user DAG');
+                } else {
+                    log('success', 'POST of user auth succeeded');
+                    console.log(data0);
+                }
+            } catch (error) {
+                log('error', `DAG grant failed: ${error.message}`);
+                showAlert('error', `Could not open webmail: ${error.message}`);
+            }
+
+            try {
+                log('info', 'Requesting DAG token...');
+                const response = await fetch(`${API_BASE}/test/get-user-DAG`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: testState.testUsername,
+                        userpass: config.webmailDemoPassword,
+                        targetClientId: config.webmailClient.clientId
+                    })
+                });
+
+                const data = await response.json();
+                if (!response.ok || !data.success) {
+                    throw new Error(data.error || 'Failed to obtain DAG tokens');
+                } else {
+                    log('success', 'DAG user auth succeeded');
+                    console.log(data);
+                }
+
+                testState.accessToken = data.accessToken;
+                testState.refreshToken = data.refreshToken;
+                testState.idToken = data.idToken;
+
+                const roundcubeUrl = config.webmailClient.clientUrl || 'https://webmailqa.workinpilot.cloud';
+                const urlWithHint = roundcubeUrl + loginHint;
+                //avoid cross site issues by accessing history for parm update
+                //let webmailWindow = window.open(roundcubeUrl.toString(), '_self');
+                let webmailWindow = window.open(urlWithHint, '_blank');
+                //,  '_blank', 'noopener,noreferrer');
+                if (!webmailWindow) {
+                    showAlert('error', 'Failed to open webmail. Check if pop-ups are blocked.');
+                } else {
+                    showAlert('info', 'Webmail opened with DAG grant');
+                }
+
+
+                // Add an event listener to the new window to run code after it loads
+                try {
+                    window.addEventListener('load', () => {
+                        getFinalUrl(webmailWindow);
+                    });
+                } catch (e) { };
+
+
+                const msg = "login_hint=" + testState.testUsername;
+                const targetOrigin = 'https://secure.workinpilot.cloud';
+
+                if (webmailWindow === null) {
+                    console.error("Unable to load webmail window.  Are popups blocked?");
+                    log('error', "Can't open webmail window. If popups are blocked, please unblock and try again.");
+
+                }
+                //
+                // postmessage
+                //
+                let kcWindow = webmailWindow;
+                // Wait until the keycloak window is fully loaded
+                kcWindow.addEventListener('load', () => {
+                    // Send a message to the KC window
+                    window.postMessage(msg, targetOrigin);
+                });
+
+                window.addEventListener('message', event => {
+                    const mesg = event.data;
+                    console.log(`Received message from ${event.origin}:`, mesg);
+                });
+
+                let newWindow = webmailWindow;
+
+                // Poll the location safely
+                const urlCheckInterval = setInterval(() => {
+                    if (newWindow === null || newWindow.closed) {
+                        console.log('Window closed.');
+                        clearInterval(urlCheckInterval);
+                        return;
+                    }
+                    try {
+                        // This will succeed ONLY if the new window is still same-origin
+                        const finalUrl = newWindow.location.href;
+                        console.log('Current URL (Same Origin):', finalUrl);
+                        // Stop checking if you have the final URL you need
+                        if (finalUrl && finalUrl.includes("secure")) {
+                            console.log('Current URL (NOT Same Origin):', finalUrl);
+                            clearInterval(urlCheckInterval);
+                        } else {
+                            console.log('SKIPPING Current URL (Same Origin):', finalUrl);
+                        }
+                    } catch (e) {
+                        // SecurityError means it went cross-origin
+                        //        console.error('Cannot access location (cross-origin)');//, newWindow.location.href);
+                        console.warn('Cannot access location (cross-origin)');//, newWindow.location.href);
+                        clearInterval(urlCheckInterval); // Stop polling as we can never access it now
+
+                    }
+                }, 500); // Check every 500ms
+
+            } catch (error) {
+                log('error', `DAG grant failed: ${error.message}`);
+                showAlert('error', `Could not open webmail: ${error.message}`);
+            }
+
+        }
+
+
+        function clearReset() {
+            if (confirm('Clear all state and reset the demo?')) {
+                testState = {
+                    keycloakUserId: null,
+                    testEmail: null,
+                    testUsername: null,
+                    accessToken: null,
+                    initialUnseenCount: null,
+                    finalUnseenCount: null,
+                    oidcAuthWindow: null,
+                    oidcAuthData: null
+                };
+                document.getElementById('test-username').value = '';
+                document.getElementById('log-pane').innerHTML = '<div class="log-entry"><span class="log-time">[Ready]</span><span class="log-level info">[INFO]</span><span class="log-message">Waiting for input...</span></div>';
+                document.getElementById('error-alert').classList.add('hidden');
+                document.getElementById('warning-alert').classList.add('hidden');
+                log('info', 'State cleared and reset');
+                forceLogout();
+
+            }
+        }
+
+        function forceLogout() {
+            forceLogoutCleanup();
+
+            // Redirect to Keycloak logout
+            const keycloakLogoutUrl = `${config.keycloak.url}/realms/${config.keycloak.realm}/protocol/openid-connect/logout`;
+            const redirectUri = encodeURIComponent(window.location.origin + '/logout-success.html');
+            window.location.href = `${keycloakLogoutUrl}?redirect_uri=${redirectUri}`;
+        }
+
+        function forceLogoutCleanup() {
+            try {
+                // Clear session storage
+                sessionStorage.removeItem('sso_mail_client_oidc_state');
+                sessionStorage.removeItem('oidc_test_state');
+                sessionStorage.clear(); // Clear all session storage
+
+                // Clear local storage
+                localStorage.removeItem('oidc_tokens');
+                localStorage.clear(); // Clear all local storage
+
+                // Clear relevant cookies
+                document.cookie.split(";").forEach(cookie => {
+                    const eqPos = cookie.indexOf("=");
+                    const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
+                    // Clear OIDC-related cookies
+                    if (name.includes('oidc') || name.includes('keycloak') || name.includes('session')) {
+                        document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
+                    }
+                });
+
+                log('info', 'Browser storage and cookies cleared');
+            } catch (error) {
+                log('warning', `Storage cleanup failed: ${error.message}`);
+            }
+        }
+
+
+        function log(level, message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logPane = document.getElementById('log-pane');
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry';
+            logEntry.innerHTML = `
+                <span class="log-time">[${timestamp}]</span>
+                <span class="log-level ${level}">[${level.toUpperCase()}]</span>
+                <span class="log-message">${escapeHtml(message)}</span>
+            `;
+            logPane.appendChild(logEntry);
+            logPane.scrollTop = logPane.scrollHeight;
+            console.log(`[${timestamp}] [${level.toUpperCase()}] ${message}`);
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function showAlert(type, message) {
+            const alertId = type === 'error' ? 'error-alert' : 'warning-alert';
+            const alertEl = document.getElementById(alertId);
+            alertEl.textContent = message;
+            alertEl.className = `alert ${type}`;
+            alertEl.classList.remove('hidden');
+            if (type !== 'error') {
+                setTimeout(() => alertEl.classList.add('hidden'), 10000);
+            }
+        }
+    </script>
+</body>
+
+</html>

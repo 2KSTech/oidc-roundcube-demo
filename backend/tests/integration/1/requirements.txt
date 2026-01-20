@@ -1,0 +1,6 @@
+#pip install flask flask-oauthlib python-jose[cryptography] itsdangerous
+# or -r option
+flask
+flask-oauthlib 
+python-jose[cryptography] 
+itsdangerous

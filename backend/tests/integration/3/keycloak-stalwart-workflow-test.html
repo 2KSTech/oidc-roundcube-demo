@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Keycloak→Stalwart OIDC Workflow Test</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .section-header {
+            background: #f5f5f5;
+            padding: 15px 20px;
+            font-weight: 600;
+            font-size: 16px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-header .status-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #ccc;
+            display: inline-block;
+        }
+
+        .section-header .status-icon.pending {
+            background: #ffa500;
+        }
+
+        .section-header .status-icon.success {
+            background: #4caf50;
+        }
+
+        .section-header .status-icon.error {
+            background: #f44336;
+        }
+
+        .section-content {
+            padding: 20px;
+        }
+
+        .config-display {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            overflow-x: auto;
+        }
+
+        .config-display pre {
+            margin: 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex: 1;
+        }
+
+        button.primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        button.primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        button.secondary {
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        button.secondary:hover:not(:disabled) {
+            background: #e0e0e0;
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .results {
+            margin-top: 20px;
+        }
+
+        .result-item {
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 6px;
+            border-left: 4px solid #ccc;
+        }
+
+        .result-item.success {
+            background: #e8f5e9;
+            border-left-color: #4caf50;
+        }
+
+        .result-item.error {
+            background: #ffebee;
+            border-left-color: #f44336;
+        }
+
+        .result-item.warning {
+            background: #fff3e0;
+            border-left-color: #ff9800;
+        }
+
+        .result-item h4 {
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .result-item pre {
+            font-size: 12px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            margin: 0;
+            font-family: 'Courier New', monospace;
+        }
+
+        .summary {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 6px;
+            margin-top: 20px;
+        }
+
+        .summary h3 {
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .stat {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .step-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .step-list li {
+            padding: 10px;
+            margin-bottom: 8px;
+            background: #f9f9f9;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .step-list li::before {
+            content: '→';
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>INFO: Keycloak→Stalwart OIDC Workflow Test</h1>
+            <p>Comprehensive test for complete OIDC registration and mail service integration</p>
+        </div>
+
+        <div class="content">
+            <!-- Configuration Section -->
+            <div class="section">
+                <div class="section-header">
+                    <span class="status-icon" id="config-status"></span>
+                    <span>Configuration</span>
+                </div>
+                <div class="section-content">
+                    <button class="secondary" onclick="loadConfig()" style="margin-bottom: 15px;">🔄 Refresh Configuration (Reload from Server .env)</button>
+                    <p style="margin-bottom: 10px; font-size: 12px; color: #666;">
+                        Configuration is automatically loaded from the server's .env file on page load. Click to refresh.
+                    </p>
+                    <div class="config-display" id="config-display">
+                        <pre>Loading configuration from server...</pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Server Defaults Section -->
+            <div class="section" id="server-defaults-section" style="display: none;">
+                <div class="section-header">
+                    <span class="status-icon success"></span>
+                    <span>Server Defaults (from .env)</span>
+                </div>
+                <div class="section-content">
+                    <div id="server-defaults-display" class="config-display">
+                        <pre>Loading server defaults...</pre>
+                    </div>
+                    <p style="margin-top: 10px; font-size: 12px; color: #666;">
+                        These values are read from the server's .env file and will be used when form fields are left empty.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Test Parameters Section -->
+            <div class="section">
+                <div class="section-header">
+                    <span class="status-icon"></span>
+                    <span>Test Parameters (Optional - Server Defaults Used if Empty)</span>
+                </div>
+                <div class="section-content">
+                    <div class="form-group">
+                        <label>Username</label>
+                        <input type="text" id="test-username" placeholder="Leave empty for auto-generated (test-{timestamp})">
+                        <small style="color: #666; font-size: 12px; display: block; margin-top: 5px;" id="username-hint">Server will generate: test-{timestamp}</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="test-email" placeholder="Leave empty for auto-generated">
+                        <small style="color: #666; font-size: 12px; display: block; margin-top: 5px;" id="email-hint">Server will generate: username@{internal-domain}</small>
+                    </div>
+                    <div class="form-group">
+                        <label>First Name (optional, defaults to "Test")</label>
+                        <input type="text" id="test-firstname" placeholder="Test" value="Test">
+                    </div>
+                    <div class="form-group">
+                        <label>Last Name (optional, defaults to "User")</label>
+                        <input type="text" id="test-lastname" placeholder="User" value="User">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Workflow Steps Section -->
+            <div class="section">
+                <div class="section-header">
+                    <span class="status-icon" id="workflow-status"></span>
+                    <span>Workflow Steps</span>
+                </div>
+                <div class="section-content">
+                    <ol class="step-list">
+                        <li>Register new OIDC user in Keycloak</li>
+                        <li>Pre-deploy user in Stalwart via OIDC discovery (OAUTHBEARER authentication triggers Stalwart to query Keycloak)</li>
+                        <li>Acquire OAuth token for sendmail and JMAP queries</li>
+                        <li>Get initial unseen email count</li>
+                        <li>Send test email to admin@workinpilot.site (Cc: self)</li>
+                        <li>Check if unseen count is incremented</li>
+                        <li>Delete newly-registered user (cleanup)</li>
+                    </ol>
+                </div>
+            </div>
+
+            <!-- Actions Section -->
+            <div class="section">
+                <div class="section-header">
+                    <span class="status-icon"></span>
+                    <span>Actions</span>
+                </div>
+                <div class="section-content">
+                    <div class="button-group">
+                        <button class="primary" id="run-test-btn" onclick="runWorkflowTest()">
+                            <span id="run-test-text">Run Complete Workflow Test</span>
+                        </button>
+                        <button class="secondary" onclick="clearResults()">Clear Results</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <div class="section" id="results-section" style="display: none;">
+                <div class="section-header">
+                    <span class="status-icon" id="results-status"></span>
+                    <span>Test Results</span>
+                </div>
+                <div class="section-content">
+                    <div class="summary" id="summary-display"></div>
+                    <div class="results" id="results-display"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+        let serverConfig = null; // Store server configuration
+
+        // Load configuration on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            loadConfig();
+        });
+
+        async function loadConfig() {
+            const configDisplay = document.getElementById('config-display');
+            const configStatus = document.getElementById('config-status');
+            
+            configStatus.className = 'status-icon pending';
+            configDisplay.innerHTML = '<pre>Loading configuration...</pre>';
+
+            try {
+                const response = await fetch(`${API_BASE}/api/test/keycloak-stalwart-config`);
+                const data = await response.json();
+
+                if (data.success) {
+                    serverConfig = data; // Store server config
+                    configStatus.className = 'status-icon success';
+                    configDisplay.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+                    
+                    // Update form defaults based on server config
+                    updateFormDefaults(data);
+                } else {
+                    configStatus.className = 'status-icon error';
+                    configDisplay.innerHTML = `<pre>Error: ${data.error || 'Failed to load configuration'}</pre>`;
+                }
+            } catch (error) {
+                configStatus.className = 'status-icon error';
+                configDisplay.innerHTML = `<pre>Error: ${error.message}</pre>`;
+            }
+        }
+
+        function updateFormDefaults(config) {
+            // Update placeholder text and info based on server config
+            const internalEmailDomain = config.internalEmailDomain || 'workinpilot.space';
+            const usernameInput = document.getElementById('test-username');
+            const emailInput = document.getElementById('test-email');
+            const usernameHint = document.getElementById('username-hint');
+            const emailHint = document.getElementById('email-hint');
+            
+            // Update placeholders and hints
+            usernameInput.placeholder = `Leave empty for auto-generated (test-{timestamp})`;
+            emailInput.placeholder = `Leave empty for auto-generated (username@${internalEmailDomain})`;
+            usernameHint.textContent = `Server will generate: test-{timestamp}`;
+            emailHint.textContent = `Server will generate: username@${internalEmailDomain}`;
+            
+            // Display server defaults section
+            const defaultsSection = document.getElementById('server-defaults-section');
+            const defaultsDisplay = document.getElementById('server-defaults-display');
+            defaultsSection.style.display = 'block';
+            
+            // Show server defaults
+            const defaults = {
+                internalEmailDomain: internalEmailDomain,
+                mailProvider: config.mailService?.provider || 'unknown',
+                keycloakUrl: config.keycloak?.url || 'not configured',
+                keycloakRealm: config.keycloak?.realm || 'not configured',
+                stalwartApiUrl: config.mailService?.apiUrl || 'not configured',
+                stalwartBaseUrl: config.mailService?.baseUrl || 'not configured'
+            };
+            defaultsDisplay.innerHTML = `<pre>${JSON.stringify(defaults, null, 2)}</pre>`;
+            
+            // Clear any existing values (to use server defaults)
+            if (!usernameInput.value) {
+                usernameInput.value = '';
+            }
+            if (!emailInput.value) {
+                emailInput.value = '';
+            }
+        }
+
+        async function runWorkflowTest() {
+            const runBtn = document.getElementById('run-test-btn');
+            const runText = document.getElementById('run-test-text');
+            const resultsSection = document.getElementById('results-section');
+            const resultsDisplay = document.getElementById('results-display');
+            const summaryDisplay = document.getElementById('summary-display');
+            const workflowStatus = document.getElementById('workflow-status');
+            const resultsStatus = document.getElementById('results-status');
+
+            // Ensure we have server config before running test
+            if (!serverConfig) {
+                alert('Configuration not loaded. Please wait for configuration to load, then try again.');
+                return;
+            }
+
+            // Disable button and show loading
+            runBtn.disabled = true;
+            runText.innerHTML = '<span class="loading"></span>Running test...';
+            workflowStatus.className = 'status-icon pending';
+            resultsStatus.className = 'status-icon pending';
+
+            // Show results section
+            resultsSection.style.display = 'block';
+            resultsDisplay.innerHTML = '<div class="result-item"><h4>Test in progress...</h4><pre>Please wait while the workflow test executes...</pre></div>';
+            summaryDisplay.innerHTML = '';
+
+            // Collect test parameters - only include non-empty values
+            // Server will use its .env defaults for undefined values
+            const testParams = {};
+            const username = document.getElementById('test-username').value.trim();
+            const email = document.getElementById('test-email').value.trim();
+            const firstName = document.getElementById('test-firstname').value.trim();
+            const lastName = document.getElementById('test-lastname').value.trim();
+            
+            if (username) testParams.username = username;
+            if (email) testParams.email = email;
+            if (firstName) testParams.firstName = firstName;
+            if (lastName) testParams.lastName = lastName;
+
+            try {
+                const response = await fetch(`${API_BASE}/api/test/keycloak-stalwart-workflow`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(testParams)
+                });
+
+                const results = await response.json();
+
+                // Update status icons
+                if (results.summary && results.summary.success) {
+                    workflowStatus.className = 'status-icon success';
+                    resultsStatus.className = 'status-icon success';
+                } else {
+                    workflowStatus.className = 'status-icon error';
+                    resultsStatus.className = 'status-icon error';
+                }
+
+                // Display summary
+                displaySummary(results, summaryDisplay);
+
+                // Display detailed results
+                displayResults(results, resultsDisplay);
+
+            } catch (error) {
+                workflowStatus.className = 'status-icon error';
+                resultsStatus.className = 'status-icon error';
+                resultsDisplay.innerHTML = `
+                    <div class="result-item error">
+                        <h4>FAIL Test Execution Error</h4>
+                        <pre>${error.message}\n\nStack trace:\n${error.stack}</pre>
+                    </div>
+                `;
+            } finally {
+                // Re-enable button
+                runBtn.disabled = false;
+                runText.textContent = 'Run Complete Workflow Test';
+            }
+        }
+
+        function displaySummary(results, container) {
+            if (!results.summary) return;
+
+            const steps = results.steps || {};
+            const stepNames = Object.keys(steps);
+            const successCount = stepNames.filter(name => {
+                const step = steps[name];
+                return step && step.success && !step.warning;
+            }).length;
+            const warningCount = stepNames.filter(name => {
+                const step = steps[name];
+                return step && step.warning;
+            }).length;
+            const errorCount = stepNames.filter(name => {
+                const step = steps[name];
+                return step && !step.success && !step.warning;
+            }).length;
+
+            const overallStatus = results.summary.success ? 'OK Success' : 'FAIL Failed';
+            const statusClass = results.summary.success ? 'success' : 'error';
+
+            container.innerHTML = `
+                <h3>Test Summary</h3>
+                <div class="result-item ${statusClass}">
+                    <h4>Overall Status: ${overallStatus}</h4>
+                    <pre>${results.summary.message || 'Test completed'}</pre>
+                    ${results.summary.errors && results.summary.errors.length > 0 ? `
+                        <h4 style="margin-top: 10px;">Errors:</h4>
+                        <pre>${results.summary.errors.join('\n')}</pre>
+                    ` : ''}
+                </div>
+                <div class="summary-stats">
+                    <div class="stat">
+                        <div class="stat-value" style="color: #4caf50;">${successCount}</div>
+                        <div class="stat-label">Successful Steps</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value" style="color: #ff9800;">${warningCount}</div>
+                        <div class="stat-label">Warnings</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value" style="color: #f44336;">${errorCount}</div>
+                        <div class="stat-label">Errors</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">${results.workflowId || 'N/A'}</div>
+                        <div class="stat-label">Workflow ID</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function displayResults(results, container) {
+            if (!results.steps) {
+                container.innerHTML = '<div class="result-item error"><h4>No results available</h4></div>';
+                return;
+            }
+
+            const stepOrder = [
+                'keycloakRegistration',
+                'stalwartPredeploy',
+                'oauthToken',
+                'initialUnseenCount',
+                'sendEmail',
+                'finalUnseenCount',
+                'cleanup'
+            ];
+
+            let html = '';
+
+            stepOrder.forEach(stepName => {
+                const step = results.steps[stepName];
+                if (!step) return;
+
+                let itemClass = 'result-item';
+                let icon = '→';
+                
+                if (step.success && !step.warning) {
+                    itemClass += ' success';
+                    icon = 'OK';
+                } else if (step.warning) {
+                    itemClass += ' warning';
+                    icon = 'WARN:';
+                } else {
+                    itemClass += ' error';
+                    icon = 'FAIL';
+                }
+
+                const stepTitle = formatStepName(stepName);
+                const stepData = JSON.stringify(step, null, 2);
+
+                html += `
+                    <div class="${itemClass}">
+                        <h4>${icon} ${stepTitle}</h4>
+                        <pre>${stepData}</pre>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function formatStepName(stepName) {
+            const names = {
+                'keycloakRegistration': '1. Keycloak User Registration',
+                'stalwartPredeploy': '2. Stalwart Pre-deploy',
+                'oauthToken': '3. OAuth Token Acquisition',
+                'initialUnseenCount': '4. Initial Unseen Count',
+                'sendEmail': '5. Send Test Email',
+                'finalUnseenCount': '6. Final Unseen Count Check',
+                'cleanup': '7. Cleanup (Delete User)'
+            };
+            return names[stepName] || stepName;
+        }
+
+        function clearResults() {
+            document.getElementById('results-section').style.display = 'none';
+            document.getElementById('results-display').innerHTML = '';
+            document.getElementById('summary-display').innerHTML = '';
+            document.getElementById('workflow-status').className = 'status-icon';
+            document.getElementById('results-status').className = 'status-icon';
+        }
+    </script>
+</body>
+</html>
+

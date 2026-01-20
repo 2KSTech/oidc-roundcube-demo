@@ -1,0 +1,56 @@
+{
+  "name": "workinpilot-keycloak-backend",
+  "version": "1.0.0",
+  "description": "Keycloak authentication backend for WorkInPilot",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "cleanup:daemon": "node services/demo-session-cleanup-daemon-standalone.js",
+    "diagnostic": "node diagnostic.js",
+    "kc-change-email-test": "node scripts/test-keycloak-admin.js",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:unit": "jest tests/unit",
+    "test:integration": "jest tests/integration",
+    "test:api": "jest tests/api",
+    "test:e2e": "jest ../tests/e2e --passWithNoTests",
+    "quiz:import:bash": "node scripts/import-bash-quiz.js"
+  },
+  "dependencies": {
+    "axios": "^1.11.0",
+    "body-parser": "^1.20.2",
+    "connect-flash": "^0.1.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "ejs": "^3.1.9",
+    "express": "^4.18.2",
+    "express-fileupload": "^1.4.3",
+    "express-session": "^1.17.3",
+    "form-data": "^4.0.4",
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.16.0",
+    "nodemailer": "^7.0.6",
+    "passport": "^0.6.0",
+    "passport-keycloak-oauth2-oidc": "^1.0.5",
+    "pdfkit": "^0.17.2",
+    "smtp-connection": "^4.0.2",
+    "sqlite3": "^5.1.6",
+    "systeminformation": "^5.27.9"
+  },
+  "devDependencies": {
+    "jest": "^30.0.5",
+    "nodemon": "^3.0.1",
+    "supertest": "^7.1.4"
+  },
+  "keywords": [
+    "keycloak",
+    "authentication",
+    "express",
+    "sqlite",
+    "workinpilot"
+  ],
+  "author": "",
+  "license": "MIT"
+}

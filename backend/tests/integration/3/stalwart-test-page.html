@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Stalwart Mail Service Test Page</title>
+  <style>
+    body { font-family: monospace; margin: 20px; }
+    .section { border: 1px solid #ccc; padding: 15px; margin: 10px 0; }
+    button { padding: 8px 15px; margin: 5px; }
+    .result { background: #f5f5f5; padding: 10px; margin: 10px 0; white-space: pre-wrap; }
+    .success { background: #d4edda; }
+    .error { background: #f8d7da; }
+    input { width: 300px; padding: 5px; margin: 5px; }
+  </style>
+</head>
+<body>
+  <h1>Stalwart Mail Service Test Page</h1>
+  
+  <div class="section">
+    <h2>1. Pre-deploy (Pre-auth) - Stop Bounces</h2>
+    <p>Pre-create mailbox so Stalwart doesn't bounce mail before user logs in</p>
+    <input type="text" id="predeploy-username" placeholder="username" value="testuser">
+    <input type="text" id="predeploy-domain" placeholder="domain" value="workinpilot.space">
+    <input type="text" id="predeploy-api-key" placeholder="Management API Key (Bearer token)">
+    <input type="text" id="predeploy-api-url" placeholder="API URL" value="https://mailqa.workinpilot.cloud/api">
+    <button onclick="predeploy()">Pre-deploy Account</button>
+    <div id="predeploy-result" class="result"></div>
+  </div>
+
+  <div class="section">
+    <h2>2. You've Got Mail Counter (JMAP)</h2>
+    <p>Get unread email count via JMAP</p>
+    <input type="text" id="jmap-user-token" placeholder="User OAuth Access Token (from Keycloak)">
+    <input type="text" id="jmap-base-url" placeholder="Base URL" value="https://mailqa.workinpilot.cloud">
+    <button onclick="getUnreadCount()">Get Unread Count</button>
+    <div id="jmap-result" class="result"></div>
+  </div>
+
+  <div class="section">
+    <h2>3. Send Mail (SMTP)</h2>
+    <p>Send email via SMTP (test OAuth/XOAUTH2 if available)</p>
+    <input type="text" id="smtp-to" placeholder="To email" value="testuser@workinpilot.space">
+    <input type="text" id="smtp-from" placeholder="From email" value="mailadmin@workinpilot.space">
+    <input type="text" id="smtp-host" placeholder="SMTP Host" value="mailqa.workinpilot.cloud">
+    <input type="text" id="smtp-port" placeholder="SMTP Port" value="587">
+    <input type="text" id="smtp-token" placeholder="OAuth Token (optional, for XOAUTH2)">
+    <button onclick="sendMail()">Send Mail</button>
+    <div id="smtp-result" class="result"></div>
+  </div>
+
+  <script>
+    async function predeploy() {
+      const resultDiv = document.getElementById('predeploy-result');
+      resultDiv.textContent = 'Pre-deploying...';
+      resultDiv.className = 'result';
+
+      const username = document.getElementById('predeploy-username').value;
+      const domain = document.getElementById('predeploy-domain').value;
+      const apiKey = document.getElementById('predeploy-api-key').value;
+      const apiUrl = document.getElementById('predeploy-api-url').value;
+      const email = `${username}@${domain}`;
+
+      try {
+        const response = await fetch(`${apiUrl}/principal`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            name: username,
+            email: email,
+            type: 'individual'
+          })
+        });
+
+        const data = await response.text();
+        let jsonData;
+        try {
+          jsonData = JSON.parse(data);
+        } catch (e) {
+          jsonData = data;
+        }
+
+        if (response.status >= 200 && response.status < 300) {
+          resultDiv.textContent = `OK SUCCESS (${response.status})\n${JSON.stringify(jsonData, null, 2)}`;
+          resultDiv.className = 'result success';
+        } else if (response.status === 409) {
+          resultDiv.textContent = `OK Already exists (409)\n${JSON.stringify(jsonData, null, 2)}`;
+          resultDiv.className = 'result success';
+        } else {
+          resultDiv.textContent = `FAIL FAILED (${response.status})\n${JSON.stringify(jsonData, null, 2)}`;
+          resultDiv.className = 'result error';
+        }
+      } catch (error) {
+        resultDiv.textContent = `FAIL ERROR: ${error.message}`;
+        resultDiv.className = 'result error';
+      }
+    }
+
+    async function getUnreadCount() {
+      const resultDiv = document.getElementById('jmap-result');
+      resultDiv.textContent = 'Getting unread count...';
+      resultDiv.className = 'result';
+
+      const userToken = document.getElementById('jmap-user-token').value;
+      const baseUrl = document.getElementById('jmap-base-url').value;
+
+      try {
+        // Get JMAP session
+        const sessionRes = await fetch(`${baseUrl}/jmap/session`, {
+          headers: {
+            'Authorization': `Bearer ${userToken}`
+          }
+        });
+
+        if (!sessionRes.ok) {
+          throw new Error(`Session failed: ${sessionRes.status} ${await sessionRes.text()}`);
+        }
+
+        const session = await sessionRes.json();
+        const accountId = session.primaryAccounts?.['urn:ietf:params:jmap:mail'] || 
+                         (session.accounts ? Object.keys(session.accounts)[0] : null);
+
+        if (!accountId) {
+          throw new Error('No account ID found in session');
+        }
+
+        // Get mailboxes
+        const jmapRes = await fetch(`${baseUrl}/jmap`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${userToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            using: ['urn:ietf:params:jmap:core', 'urn:ietf:params:jmap:mail'],
+            methodCalls: [
+              ['Mailbox/get', {
+                accountId: accountId,
+                properties: ['id', 'name', 'role', 'totalEmails', 'unreadEmails', 'totalThreads', 'unreadThreads']
+              }, 'c1']
+            ]
+          })
+        });
+
+        const jmapData = await jmapRes.json();
+        const inbox = jmapData.methodResponses?.[0]?.[1]?.list?.find(m => m.role === 'inbox');
+
+        if (inbox) {
+          resultDiv.textContent = `OK Unread: ${inbox.unreadEmails || 0}\nTotal: ${inbox.totalEmails || 0}\n${JSON.stringify(inbox, null, 2)}`;
+          resultDiv.className = 'result success';
+        } else {
+          resultDiv.textContent = `WARN: No inbox found\n${JSON.stringify(jmapData, null, 2)}`;
+          resultDiv.className = 'result error';
+        }
+      } catch (error) {
+        resultDiv.textContent = `FAIL ERROR: ${error.message}`;
+        resultDiv.className = 'result error';
+      }
+    }
+
+    async function sendMail() {
+      const resultDiv = document.getElementById('smtp-result');
+      resultDiv.textContent = 'Sending mail...';
+      resultDiv.className = 'result';
+
+      // Note: Browser CORS prevents direct SMTP. This would need to go through your backend.
+      // This is a placeholder to show what the backend endpoint should do.
+      resultDiv.textContent = 'WARN: Browser CORS prevents direct SMTP. Use backend endpoint:\nPOST /api/sendmail\nwith: to, from, subject, text, userToken (for XOAUTH2)';
+      resultDiv.className = 'result error';
+    }
+  </script>
+</body>
+</html>
+

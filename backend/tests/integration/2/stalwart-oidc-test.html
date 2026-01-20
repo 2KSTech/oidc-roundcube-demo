@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Stalwart OIDC Test Page</title>
+  <style>
+    body { font-family: monospace; margin: 20px; max-width: 1200px; }
+    .section { border: 1px solid #ccc; padding: 15px; margin: 10px 0; }
+    button { padding: 8px 15px; margin: 5px; cursor: pointer; }
+    .result { background: #f5f5f5; padding: 10px; margin: 10px 0; white-space: pre-wrap; font-size: 12px; max-height: 400px; overflow-y: auto; }
+    .success { background: #d4edda; }
+    .error { background: #f8d7da; }
+    input, textarea { width: 100%; max-width: 500px; padding: 5px; margin: 5px 0; box-sizing: border-box; }
+    label { display: block; margin-top: 10px; font-weight: bold; }
+    .config-group { background: #f9f9f9; padding: 10px; margin: 10px 0; border-left: 3px solid #007bff; }
+  </style>
+</head>
+<body>
+  <h1>Stalwart OIDC Test Page</h1>
+  <p>Standalone test page for Stalwart OIDC flow with Keycloak</p>
+  
+  <div class="section">
+    <h2>Configuration</h2>
+    <div class="config-group">
+      <label>Keycloak URL:</label>
+      <input type="text" id="keycloak-url" placeholder="https://secureqa.workinpilot.cloud/realms/OIDCRealm" value="">
+      
+      <label>Stalwart Client ID (from Keycloak):</label>
+      <input type="text" id="client-id" placeholder="stalwart-client" value="">
+      
+      <label>Stalwart Client Secret:</label>
+      <input type="password" id="client-secret" placeholder="your-secret" value="">
+      
+      <label>Redirect URI (must match Keycloak client config):</label>
+      <input type="text" id="redirect-uri" placeholder="https://mailqa.workinpilot.cloud/oidc/callback" value="">
+      
+      <label>Stalwart Base URL:</label>
+      <input type="text" id="stalwart-url" placeholder="https://mailqa.workinpilot.cloud" value="">
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>1. Start OIDC Flow</h2>
+    <p>Initiates OIDC authorization with Keycloak</p>
+    <button onclick="startOIDCFlow()">Start OIDC Authorization</button>
+    <div id="oidc-result" class="result"></div>
+  </div>
+
+  <div class="section">
+    <h2>2. Token Exchange (Auto on callback)</h2>
+    <p>If redirected back with code, token exchange happens automatically</p>
+    <div id="token-result" class="result"></div>
+  </div>
+
+  <div class="section">
+    <h2>3. Test with Stalwart</h2>
+    <p>Test JMAP and SMTP using the OAuth token</p>
+    <label>OAuth Access Token (from step 2):</label>
+    <textarea id="access-token" rows="3" placeholder="Paste access token here or it will be auto-filled from step 2"></textarea>
+    
+    <button onclick="testJMAP()">Test JMAP Session</button>
+    <button onclick="testJMAPUnread()">Test JMAP Unread Count</button>
+    <div id="jmap-result" class="result"></div>
+  </div>
+
+  <script>
+    // Check if we're on callback
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    const error = urlParams.get('error');
+    const state = urlParams.get('state');
+
+    if (code) {
+      // Auto-exchange token on callback
+      window.addEventListener('DOMContentLoaded', () => {
+        exchangeToken(code, state);
+      });
+    } else if (error) {
+      window.addEventListener('DOMContentLoaded', () => {
+        const resultDiv = document.getElementById('token-result');
+        resultDiv.textContent = `FAIL OIDC Error: ${error}\n${urlParams.get('error_description') || ''}`;
+        resultDiv.className = 'result error';
+      });
+    }
+
+    function getConfig() {
+      return {
+        keycloakUrl: document.getElementById('keycloak-url').value.trim(),
+        clientId: document.getElementById('client-id').value.trim(),
+        clientSecret: document.getElementById('client-secret').value.trim(),
+        redirectUri: document.getElementById('redirect-uri').value.trim(),
+        stalwartUrl: document.getElementById('stalwart-url').value.trim()
+      };
+    }
+
+    function validateConfig() {
+      const config = getConfig();
+      const missing = [];
+      if (!config.keycloakUrl) missing.push('Keycloak URL');
+      if (!config.clientId) missing.push('Client ID');
+      if (!config.clientSecret) missing.push('Client Secret');
+      if (!config.redirectUri) missing.push('Redirect URI');
+      if (!config.stalwartUrl) missing.push('Stalwart URL');
+      
+      if (missing.length > 0) {
+        alert('Missing configuration: ' + missing.join(', '));
+        return null;
+      }
+      return config;
+    }
+
+    function startOIDCFlow() {
+      const config = validateConfig();
+      if (!config) return;
+
+      const resultDiv = document.getElementById('oidc-result');
+      resultDiv.textContent = 'Starting OIDC flow...';
+      resultDiv.className = 'result';
+
+      // Generate state for CSRF protection
+      const state = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      sessionStorage.setItem('oidc_state', state);
+
+      // Build authorization URL
+      const authUrl = new URL(`${config.keycloakUrl}/protocol/openid-connect/auth`);
+      authUrl.searchParams.set('client_id', config.clientId);
+      authUrl.searchParams.set('redirect_uri', config.redirectUri);
+      authUrl.searchParams.set('response_type', 'code');
+      authUrl.searchParams.set('scope', 'openid profile email');
+      authUrl.searchParams.set('state', state);
+
+      resultDiv.textContent = `Redirecting to Keycloak...\n\nAuthorization URL:\n${authUrl.toString()}`;
+      resultDiv.className = 'result';
+
+      // Redirect to Keycloak
+      window.location.href = authUrl.toString();
+    }
+
+    async function exchangeToken(code, receivedState) {
+      const config = validateConfig();
+      if (!config) {
+        const resultDiv = document.getElementById('token-result');
+        resultDiv.textContent = 'FAIL Configuration missing. Please fill in all fields.';
+        resultDiv.className = 'result error';
+        return;
+      }
+
+      const resultDiv = document.getElementById('token-result');
+      resultDiv.textContent = 'Exchanging authorization code for tokens...';
+      resultDiv.className = 'result';
+
+      // Verify state
+      const savedState = sessionStorage.getItem('oidc_state');
+      if (savedState && receivedState !== savedState) {
+        resultDiv.textContent = 'FAIL State mismatch - possible CSRF attack';
+        resultDiv.className = 'result error';
+        return;
+      }
+
+      try {
+        // Exchange code for tokens
+        const tokenUrl = `${config.keycloakUrl}/protocol/openid-connect/token`;
+        const formData = new URLSearchParams();
+        formData.append('grant_type', 'authorization_code');
+        formData.append('code', code);
+        formData.append('redirect_uri', config.redirectUri);
+        formData.append('client_id', config.clientId);
+        formData.append('client_secret', config.clientSecret);
+
+        const response = await fetch(tokenUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+          },
+          body: formData
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          resultDiv.textContent = `FAIL Token exchange failed (${response.status}):\n${JSON.stringify(data, null, 2)}`;
+          resultDiv.className = 'result error';
+          return;
+        }
+
+        const accessToken = data.access_token;
+        const refreshToken = data.refresh_token;
+        const idToken = data.id_token;
+
+        // Store token in textarea
+        document.getElementById('access-token').value = accessToken;
+
+        resultDiv.textContent = `OK Token exchange successful!\n\nAccess Token: ${accessToken.substring(0, 50)}...\nRefresh Token: ${refreshToken ? refreshToken.substring(0, 50) + '...' : 'none'}\nID Token: ${idToken ? idToken.substring(0, 50) + '...' : 'none'}\n\nFull response:\n${JSON.stringify(data, null, 2)}`;
+        resultDiv.className = 'result success';
+
+        // Clean URL
+        const cleanUrl = window.location.href.split('?')[0];
+        window.history.replaceState({}, document.title, cleanUrl);
+
+      } catch (error) {
+        resultDiv.textContent = `FAIL Error: ${error.message}\n${error.stack}`;
+        resultDiv.className = 'result error';
+      }
+    }
+
+    async function testJMAP() {
+      const config = validateConfig();
+      if (!config) return;
+
+      const token = document.getElementById('access-token').value.trim();
+      if (!token) {
+        alert('Please provide an access token');
+        return;
+      }
+
+      const resultDiv = document.getElementById('jmap-result');
+      resultDiv.textContent = 'Testing JMAP session...';
+      resultDiv.className = 'result';
+
+      try {
+        const response = await fetch(`${config.stalwartUrl}/jmap/session`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          resultDiv.textContent = `FAIL JMAP session failed (${response.status}):\n${JSON.stringify(data, null, 2)}`;
+          resultDiv.className = 'result error';
+          return;
+        }
+
+        resultDiv.textContent = `OK JMAP session successful!\n\n${JSON.stringify(data, null, 2)}`;
+        resultDiv.className = 'result success';
+
+      } catch (error) {
+        resultDiv.textContent = `FAIL Error: ${error.message}`;
+        resultDiv.className = 'result error';
+      }
+    }
+
+    async function testJMAPUnread() {
+      const config = validateConfig();
+      if (!config) return;
+
+      const token = document.getElementById('access-token').value.trim();
+      if (!token) {
+        alert('Please provide an access token');
+        return;
+      }
+
+      const resultDiv = document.getElementById('jmap-result');
+      resultDiv.textContent = 'Getting JMAP session and unread count...';
+      resultDiv.className = 'result';
+
+      try {
+        // Get session first
+        const sessionRes = await fetch(`${config.stalwartUrl}/jmap/session`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (!sessionRes.ok) {
+          throw new Error(`Session failed: ${sessionRes.status}`);
+        }
+
+        const session = await sessionRes.json();
+        const accountId = session.primaryAccounts?.['urn:ietf:params:jmap:mail'] || 
+                         (session.accounts ? Object.keys(session.accounts)[0] : null);
+
+        if (!accountId) {
+          throw new Error('No account ID found in session');
+        }
+
+        // Get mailboxes
+        const jmapRes = await fetch(`${config.stalwartUrl}/jmap`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            using: ['urn:ietf:params:jmap:core', 'urn:ietf:params:jmap:mail'],
+            methodCalls: [
+              ['Mailbox/get', {
+                accountId: accountId,
+                properties: ['id', 'name', 'role', 'totalEmails', 'unreadEmails', 'totalThreads', 'unreadThreads']
+              }, 'c1']
+            ]
+          })
+        });
+
+        const jmapData = await jmapRes.json();
+        const inbox = jmapData.methodResponses?.[0]?.[1]?.list?.find(m => m.role === 'inbox');
+
+        if (inbox) {
+          resultDiv.textContent = `OK Unread count retrieved!\n\nUnread: ${inbox.unreadEmails || 0}\nTotal: ${inbox.totalEmails || 0}\n\nFull inbox data:\n${JSON.stringify(inbox, null, 2)}`;
+          resultDiv.className = 'result success';
+        } else {
+          resultDiv.textContent = `WARN: No inbox found\n\nFull response:\n${JSON.stringify(jmapData, null, 2)}`;
+          resultDiv.className = 'result error';
+        }
+
+      } catch (error) {
+        resultDiv.textContent = `FAIL Error: ${error.message}\n${error.stack}`;
+        resultDiv.className = 'result error';
+      }
+    }
+
+    // Load defaults from localStorage if available
+    window.addEventListener('DOMContentLoaded', () => {
+      const saved = localStorage.getItem('stalwart-oidc-config');
+      if (saved) {
+        try {
+          const config = JSON.parse(saved);
+          if (config.keycloakUrl) document.getElementById('keycloak-url').value = config.keycloakUrl;
+          if (config.clientId) document.getElementById('client-id').value = config.clientId;
+          if (config.redirectUri) document.getElementById('redirect-uri').value = config.redirectUri;
+          if (config.stalwartUrl) document.getElementById('stalwart-url').value = config.stalwartUrl;
+        } catch (e) {}
+      }
+    });
+
+    // Save config on change
+    ['keycloak-url', 'client-id', 'redirect-uri', 'stalwart-url'].forEach(id => {
+      document.getElementById(id).addEventListener('change', () => {
+        const config = getConfig();
+        localStorage.setItem('stalwart-oidc-config', JSON.stringify(config));
+      });
+    });
+  </script>
+</body>
+</html>
+
+

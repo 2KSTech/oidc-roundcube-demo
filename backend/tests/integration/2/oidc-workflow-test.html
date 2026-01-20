@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Keycloak → Stalwart OIDC Workflow Test</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .config-section {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-left: 4px solid #667eea;
+        }
+
+        .config-section h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .config-info {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            color: #555;
+        }
+
+        .config-info strong {
+            color: #333;
+        }
+
+        .test-section {
+            margin-bottom: 30px;
+        }
+
+        .test-section h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .step-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        .test-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 12px 24px;
+            font-size: 1em;
+            font-weight: 600;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        button.primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        button.primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button.secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        button.secondary:hover:not(:disabled) {
+            background: #5a6268;
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-indicator.pending {
+            background: #ffc107;
+        }
+
+        .status-indicator.running {
+            background: #17a2b8;
+            animation: pulse 1.5s infinite;
+        }
+
+        .status-indicator.success {
+            background: #28a745;
+        }
+
+        .status-indicator.error {
+            background: #dc3545;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .result-box {
+            background: #f8f9fa;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 15px;
+            min-height: 100px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .result-box.success {
+            background: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+
+        .result-box.error {
+            background: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+        }
+
+        .result-box.pending {
+            background: #fff3cd;
+            border-color: #ffc107;
+            color: #856404;
+        }
+
+        .summary {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 8px;
+            padding: 25px;
+            margin-top: 30px;
+        }
+
+        .summary h2 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .summary-item {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #667eea;
+        }
+
+        .summary-item strong {
+            display: block;
+            color: #667eea;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .summary-item span {
+            font-size: 1.2em;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .api-endpoint {
+            background: #e9ecef;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            margin-top: 10px;
+            word-break: break-all;
+        }
+
+        .note {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+            color: #856404;
+        }
+
+        .note strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>INFO: Keycloak → Stalwart OIDC Workflow Test</h1>
+            <p>Comprehensive integration test for OIDC user registration and email workflow</p>
+        </div>
+
+        <div class="content">
+            <!-- Configuration Section -->
+            <div class="config-section">
+                <h2>📋 Configuration</h2>
+                <p>This test uses configuration from your backend <code>.env</code> file via the mail-service-abstraction layer.</p>
+                <div class="config-info" id="config-info">
+                    <strong>Loading configuration...</strong>
+                </div>
+                <div class="api-endpoint">
+                    <strong>API Endpoint:</strong> <span id="api-endpoint">/api/test/oidc-workflow</span>
+                </div>
+            </div>
+
+            <!-- Test Workflow Section -->
+            <div class="test-section">
+                <h2>
+                    <span class="step-number">INFO:</span>
+                    Complete Workflow Test
+                </h2>
+                <p style="margin-bottom: 15px; color: #666;">
+                    This test executes all 5 steps of the OIDC workflow:
+                </p>
+                <ol style="margin-left: 20px; margin-bottom: 20px; color: #666; line-height: 1.8;">
+                    <li>Register new OIDC user in Keycloak</li>
+                    <li>Pre-deploy/register user in Stalwart (via mail-service-abstraction)</li>
+                    <li>Send test email to <span id="admin-email-placeholder">admin@[domain]</span> (Cc: self)</li>
+                    <li>Check if 'unseen count' is incremented by new email</li>
+                    <li>Delete newly-registered user (Keycloak + Stalwart)</li>
+                </ol>
+
+                <div class="test-controls">
+                    <button class="primary" id="run-test-btn" onclick="runCompleteTest()">
+                        <span id="run-test-text">Run Complete Test</span>
+                    </button>
+                    <button class="secondary" onclick="clearResults()">Clear Results</button>
+                </div>
+
+                <div class="result-box pending" id="test-result" style="display: none;">
+                    <div id="test-result-content">Waiting to start test...</div>
+                </div>
+            </div>
+
+            <!-- Individual Step Results -->
+            <div class="test-section">
+                <h2>
+                    <span class="step-number">📊</span>
+                    Test Results
+                </h2>
+                <div id="step-results"></div>
+            </div>
+
+            <!-- Summary Section -->
+            <div class="summary" id="summary-section" style="display: none;">
+                <h2>📈 Test Summary</h2>
+                <div class="summary-grid" id="summary-grid"></div>
+            </div>
+
+            <!-- Notes -->
+            <div class="note">
+                <strong>WARN: Important Notes:</strong>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li><strong>Configuration Source:</strong> All values are loaded from the <strong>remote server's</strong> <code>.env</code> file (not your local machine)</li>
+                    <li>This test creates and deletes a temporary test user</li>
+                    <li>Test user email format: <code>test_oidc_[timestamp]@<span id="domain-placeholder">[domain]</span></code></li>
+                    <li>All operations use the configured mail service provider (from <code>WORKINPILOT_MAIL_PROVIDER</code>)</li>
+                    <li>Unseen count check requires OAuth token - may be skipped for newly created users</li>
+                    <li>Test results are logged to backend console for debugging</li>
+                    <li>Configuration is refreshed each time the page loads</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+        const API_ENDPOINT = `${API_BASE}/api/test/oidc-workflow`;
+
+        // Update API endpoint display
+        document.getElementById('api-endpoint').textContent = API_ENDPOINT;
+
+        // Load configuration info from server .env
+        async function loadConfig() {
+            try {
+                const response = await fetch(`${API_BASE}/api/test/config-info`);
+                const data = await response.json();
+                if (data.success && data.config) {
+                    const config = data.config;
+                    
+                    // Update admin email placeholder in the workflow list
+                    const adminEmailEl = document.getElementById('admin-email-placeholder');
+                    if (adminEmailEl && config.adminEmail) {
+                        adminEmailEl.textContent = config.adminEmail;
+                    }
+                    
+                    // Update domain placeholder in notes
+                    const domainEl = document.getElementById('domain-placeholder');
+                    if (domainEl && config.internalEmailDomain) {
+                        domainEl.textContent = config.internalEmailDomain;
+                    }
+                    
+                    // Display full configuration
+                    let configHtml = `
+                        <strong>Mail Provider:</strong> ${config.provider || 'N/A'}<br>
+                        <strong>Internal Email Domain:</strong> ${config.internalEmailDomain || 'N/A'}<br>
+                        <strong>Admin Email:</strong> ${config.adminEmail || 'N/A'}<br>
+                        <strong>API URL:</strong> ${config.apiUrl || 'N/A'}<br>
+                        <strong>SMTP Host:</strong> ${config.smtpHost || 'N/A'}<br>
+                        <strong>SMTP Port:</strong> ${config.smtpPort || 'N/A'}<br>
+                        <strong>Keycloak URL:</strong> ${config.keycloakUrl || 'N/A'}<br>
+                        <strong>Keycloak Realm:</strong> ${config.keycloakRealm || 'N/A'}<br>
+                    `;
+                    
+                    if (config.provider === 'stalwart') {
+                        configHtml += `
+                        <strong>Stalwart API Key Name:</strong> ${config.stalwartApiKeyName || 'N/A'}<br>
+                        <strong>Stalwart Admin API Key:</strong> ${config.hasStalwartAdminApiKey ? 'OK Configured' : 'FAIL Not configured'}<br>
+                        `;
+                    }
+                    
+                    configHtml += `<strong>Service Configured:</strong> ${config.configured ? 'OK Yes' : 'FAIL No'}`;
+                    
+                    document.getElementById('config-info').innerHTML = configHtml;
+                } else {
+                    throw new Error(data.error || 'Failed to load configuration');
+                }
+            } catch (error) {
+                document.getElementById('config-info').innerHTML = `
+                    <strong style="color: #dc3545;">Error loading config:</strong> ${error.message}<br>
+                    <em>Configuration will be loaded from server .env file when test runs</em>
+                `;
+                console.error('Config load error:', error);
+            }
+        }
+
+        // Run complete test workflow
+        async function runCompleteTest() {
+            const btn = document.getElementById('run-test-btn');
+            const btnText = document.getElementById('run-test-text');
+            const resultBox = document.getElementById('test-result');
+            const resultContent = document.getElementById('test-result-content');
+            const stepResults = document.getElementById('step-results');
+            const summarySection = document.getElementById('summary-section');
+
+            // Disable button and show loading
+            btn.disabled = true;
+            btnText.innerHTML = '<span class="loading"></span> Running Test...';
+            resultBox.style.display = 'block';
+            resultBox.className = 'result-box pending';
+            resultContent.textContent = 'Starting test workflow...\n\nThis may take 10-30 seconds.';
+
+            stepResults.innerHTML = '';
+            summarySection.style.display = 'none';
+
+            try {
+                const startTime = Date.now();
+                const response = await fetch(API_ENDPOINT, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const endTime = Date.now();
+                const duration = ((endTime - startTime) / 1000).toFixed(2);
+
+                const data = await response.json();
+
+                if (data.success) {
+                    resultBox.className = 'result-box success';
+                    resultContent.textContent = `OK Test completed successfully in ${duration}s\n\n${JSON.stringify(data.results.summary, null, 2)}`;
+                } else {
+                    resultBox.className = 'result-box error';
+                    resultContent.textContent = `FAIL Test failed after ${duration}s\n\nError: ${data.error || 'Unknown error'}\n\n${JSON.stringify(data.results, null, 2)}`;
+                }
+
+                // Display step-by-step results
+                displayStepResults(data.results);
+
+                // Display summary
+                displaySummary(data.results, duration);
+
+            } catch (error) {
+                resultBox.className = 'result-box error';
+                resultContent.textContent = `FAIL Test error: ${error.message}\n\n${error.stack || ''}`;
+            } finally {
+                btn.disabled = false;
+                btnText.textContent = 'Run Complete Test';
+            }
+        }
+
+        // Display step-by-step results
+        function displayStepResults(results) {
+            const stepResults = document.getElementById('step-results');
+            const steps = [
+                { key: 'step1_keycloak_register', label: 'Step 1: Keycloak Registration', icon: 'INFO:' },
+                { key: 'step2_stalwart_predeploy', label: 'Step 2: Stalwart Pre-deploy', icon: '📧' },
+                { key: 'step3_send_email', label: 'Step 3: Send Test Email', icon: '✉️' },
+                { key: 'step4_unseen_count_before', label: 'Step 4a: Unseen Count (Before)', icon: '📊' },
+                { key: 'step4_unseen_count_after', label: 'Step 4b: Unseen Count (After)', icon: '📊' },
+                { key: 'step5_delete_user', label: 'Step 5: Delete User (Stalwart)', icon: '🗑️' },
+                { key: 'cleanup_keycloak', label: 'Cleanup: Delete User (Keycloak)', icon: '🧹' }
+            ];
+
+            let html = '';
+            steps.forEach(step => {
+                const result = results[step.key];
+                if (!result) return;
+
+                const status = result.success ? 'success' : 'error';
+                const statusIcon = result.success ? 'OK' : 'FAIL';
+                const statusClass = result.success ? 'success' : 'error';
+
+                html += `
+                    <div style="margin-bottom: 15px; padding: 15px; background: #f8f9fa; border-radius: 6px; border-left: 4px solid ${result.success ? '#28a745' : '#dc3545'};">
+                        <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                            <span style="font-size: 1.5em; margin-right: 10px;">${step.icon}</span>
+                            <strong style="flex: 1;">${step.label}</strong>
+                            <span class="status-indicator ${statusClass}"></span>
+                            <span style="margin-left: 10px; font-weight: bold; color: ${result.success ? '#28a745' : '#dc3545'};">${statusIcon}</span>
+                        </div>
+                        <div style="font-family: 'Courier New', monospace; font-size: 0.85em; color: #666; margin-left: 45px;">
+                            ${formatStepResult(result)}
+                        </div>
+                    </div>
+                `;
+            });
+
+            stepResults.innerHTML = html || '<p style="color: #666;">No step results available</p>';
+        }
+
+        // Format step result for display
+        function formatStepResult(result) {
+            if (result.success) {
+                const parts = [];
+                if (result.userId) parts.push(`User ID: ${result.userId}`);
+                if (result.username) parts.push(`Username: ${result.username}`);
+                if (result.email) parts.push(`Email: ${result.email}`);
+                if (result.messageId) parts.push(`Message ID: ${result.messageId}`);
+                if (result.unseen_count !== undefined) parts.push(`Unseen Count: ${result.unseen_count}`);
+                if (result.message) parts.push(`Message: ${result.message}`);
+                return parts.join(' | ') || 'Success';
+            } else {
+                let errorMsg = `Error: ${result.error || 'Unknown error'}`;
+                if (result.note) {
+                    errorMsg += `\nNote: ${result.note}`;
+                }
+                return errorMsg;
+            }
+        }
+
+        // Display summary
+        function displaySummary(results, duration) {
+            const summarySection = document.getElementById('summary-section');
+            const summaryGrid = document.getElementById('summary-grid');
+
+            if (!results.summary) return;
+
+            const summary = results.summary;
+            const items = [
+                { label: 'Overall Status', value: summary.overall_success ? 'OK Success' : 'FAIL Failed' },
+                { label: 'Test User', value: summary.test_user || 'N/A' },
+                { label: 'Test Email', value: summary.test_email || 'N/A' },
+                { label: 'Provider', value: summary.provider || 'N/A' },
+                { label: 'Email Verified', value: summary.email_delivery_verified ? 'OK Yes' : 'WARN: No/Unknown' },
+                { label: 'Duration', value: `${duration}s` }
+            ];
+
+            let html = '';
+            items.forEach(item => {
+                html += `
+                    <div class="summary-item">
+                        <strong>${item.label}</strong>
+                        <span>${item.value}</span>
+                    </div>
+                `;
+            });
+
+            summaryGrid.innerHTML = html;
+            summarySection.style.display = 'block';
+        }
+
+        // Clear results
+        function clearResults() {
+            document.getElementById('test-result').style.display = 'none';
+            document.getElementById('step-results').innerHTML = '';
+            document.getElementById('summary-section').style.display = 'none';
+        }
+
+        // Load config on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            loadConfig();
+        });
+    </script>
+</body>
+</html>
+

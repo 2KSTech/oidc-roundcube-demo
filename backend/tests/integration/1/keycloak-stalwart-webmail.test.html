@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Keycloak → Stalwart → Roundcube Webmail Test</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #7f8c8d;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .info-box {
+            background: #e8f4f8;
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 30px;
+        }
+
+        .info-box h3 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .info-box p {
+            color: #555;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .info-box ul {
+            margin-left: 20px;
+            color: #555;
+            font-size: 14px;
+        }
+
+        .info-box li {
+            margin-bottom: 5px;
+        }
+
+        .status-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 6px;
+            margin-bottom: 30px;
+        }
+
+        .status-section h2 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            background: white;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+        }
+
+        .status-item label {
+            font-weight: 600;
+            min-width: 150px;
+            color: #2c3e50;
+        }
+
+        .status-item .value {
+            flex: 1;
+            color: #555;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        .status-badge.authenticated {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-badge.not-authenticated {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .webmail-button {
+            display: block;
+            width: 100%;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            margin: 30px 0;
+            transition: all 0.3s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .webmail-button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+            opacity: 0.95;
+        }
+
+        .webmail-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .webmail-button.secondary {
+            background: #95a5a6;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+
+        .alert.info {
+            background: #d1ecf1;
+            border-left: 4px solid #3498db;
+            color: #0c5460;
+        }
+
+        .alert.warning {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            color: #856404;
+        }
+
+        .alert.error {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+            color: #721c24;
+        }
+
+        .alert.success {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            color: #155724;
+        }
+
+        .log-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .log-section h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        .log-entry {
+            padding: 8px;
+            margin-bottom: 5px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            background: white;
+            border-left: 3px solid #ddd;
+        }
+
+        .log-entry.info {
+            border-left-color: #3498db;
+        }
+
+        .log-entry.success {
+            border-left-color: #27ae60;
+        }
+
+        .log-entry.error {
+            border-left-color: #e74c3c;
+        }
+
+        .log-entry.warning {
+            border-left-color: #f39c12;
+        }
+
+        .log-time {
+            color: #7f8c8d;
+            margin-right: 10px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #2980b9;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📧 Keycloak → Stalwart → Roundcube Webmail Test</h1>
+        <p class="subtitle">Test the complete OIDC/XOAUTH2 flow from Keycloak authentication to Roundcube webmail access</p>
+
+        <div class="info-box">
+            <h3>📋 Prerequisites</h3>
+            <p><strong>This test requires:</strong></p>
+            <ul>
+                <li>OK Keycloak OIDC configured and working</li>
+                <li>OK Stalwart mail server configured with OIDC directory</li>
+                <li>OK Roundcube installed and configured for XOAUTH2</li>
+                <li>OK User account exists in Keycloak and has been discovered in Stalwart</li>
+                <li>OK User must be authenticated via Keycloak (this page requires authentication)</li>
+            </ul>
+            <p style="margin-top: 10px;"><strong>Note:</strong> This test validates the webmail integration. The OIDC/Stalwart configuration test is separate.</p>
+        </div>
+
+        <div id="error-alert" class="alert error hidden"></div>
+        <div id="warning-alert" class="alert warning hidden"></div>
+        <div id="info-alert" class="alert info hidden"></div>
+        <div id="success-alert" class="alert success hidden"></div>
+
+        <div class="status-section">
+            <h2>Authentication Status</h2>
+            <div id="auth-status-container">
+                <div class="status-item">
+                    <label>User Authentication:</label>
+                    <div class="value">
+                        <span id="auth-status">Checking...</span>
+                        <span id="auth-badge" class="status-badge not-authenticated">Not Authenticated</span>
+                    </div>
+                </div>
+                <div class="status-item">
+                    <label>Username:</label>
+                    <div class="value" id="username-value">-</div>
+                </div>
+                <div class="status-item">
+                    <label>Email:</label>
+                    <div class="value" id="email-value">-</div>
+                </div>
+                <div class="status-item">
+                    <label>Access Token:</label>
+                    <div class="value" id="token-status">Checking...</div>
+                </div>
+                <div class="status-item">
+                    <label>Roundcube URL:</label>
+                    <div class="value" id="roundcube-url">Loading...</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="status-section">
+            <h2>Webmail Access</h2>
+            <p style="margin-bottom: 15px; color: #555;">
+                Click the button below to access Roundcube webmail. You will be redirected with your OAuth token,
+                which Roundcube will use for XOAUTH2 authentication with Stalwart.
+            </p>
+            <a href="#" id="webmail-button" class="webmail-button" onclick="redirectToWebmail(event)">
+                📧 Open Roundcube Webmail
+            </a>
+            <div class="button-group">
+                <button class="btn btn-primary" onclick="checkAuthStatus()">🔄 Refresh Status</button>
+                <button class="btn btn-primary" onclick="loadConfig()">⚙️ Load Configuration</button>
+            </div>
+        </div>
+
+        <div class="log-section">
+            <h3>Activity Log</h3>
+            <div id="log-container"></div>
+        </div>
+    </div>
+
+    <script>
+        // API base URL - dynamically detect based on current page location
+        function getApiBase() {
+            if (window.location.origin && !window.location.origin.includes('file://')) {
+                return `${window.location.origin}/api`;
+            }
+            return 'http://localhost:3010/api';
+        }
+        const API_BASE = getApiBase();
+
+        // Logging function
+        function log(level, message) {
+            const logContainer = document.getElementById('log-container');
+            const time = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry ${level}`;
+            logEntry.innerHTML = `<span class="log-time">[${time}]</span> <span class="log-level ${level}">[${level.toUpperCase()}]</span> ${message}`;
+            logContainer.insertBefore(logEntry, logContainer.firstChild);
+            
+            // Keep only last 50 log entries
+            while (logContainer.children.length > 50) {
+                logContainer.removeChild(logContainer.lastChild);
+            }
+        }
+
+        // Show alert
+        function showAlert(type, message) {
+            const alertId = `${type}-alert`;
+            const alertEl = document.getElementById(alertId);
+            if (alertEl) {
+                alertEl.textContent = message;
+                alertEl.classList.remove('hidden');
+                setTimeout(() => {
+                    alertEl.classList.add('hidden');
+                }, 5000);
+            }
+        }
+
+        // Check authentication status
+        async function checkAuthStatus() {
+            log('info', 'Checking authentication status...');
+            
+            try {
+                // Try to get user info from backend
+                // This endpoint should require authentication
+                const response = await fetch(`${API_BASE}/test/keycloak-stalwart-webmail/status`, {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+
+                if (response.status === 401 || response.status === 403) {
+                    // Not authenticated
+                    document.getElementById('auth-status').textContent = 'Not Authenticated';
+                    document.getElementById('auth-badge').textContent = 'Not Authenticated';
+                    document.getElementById('auth-badge').className = 'status-badge not-authenticated';
+                    document.getElementById('username-value').textContent = '-';
+                    document.getElementById('email-value').textContent = '-';
+                    document.getElementById('token-status').textContent = 'Not available (user not authenticated)';
+                    document.getElementById('webmail-button').disabled = true;
+                    document.getElementById('webmail-button').textContent = 'WARN: Please authenticate first';
+                    document.getElementById('webmail-button').classList.add('secondary');
+                    
+                    log('warning', 'User is not authenticated. Please log in via Keycloak first.');
+                    showAlert('warning', 'You must be authenticated via Keycloak to use this test. Redirecting to login...');
+                    
+                    // Redirect to login after a delay
+                    setTimeout(() => {
+                        window.location.href = '/auth/keycloak';
+                    }, 2000);
+                    
+                    return;
+                }
+
+                const data = await response.json();
+                
+                if (data.authenticated) {
+                    document.getElementById('auth-status').textContent = 'Authenticated';
+                    document.getElementById('auth-badge').textContent = 'Authenticated';
+                    document.getElementById('auth-badge').className = 'status-badge authenticated';
+                    document.getElementById('username-value').textContent = data.username || '-';
+                    document.getElementById('email-value').textContent = data.email || '-';
+                    document.getElementById('token-status').textContent = data.hasToken ? 'Available' : 'Not available';
+                    document.getElementById('webmail-button').disabled = !data.hasToken;
+                    
+                    if (data.hasToken) {
+                        document.getElementById('webmail-button').textContent = '📧 Open Roundcube Webmail';
+                        document.getElementById('webmail-button').classList.remove('secondary');
+                    } else {
+                        document.getElementById('webmail-button').textContent = 'WARN: Access token not available';
+                        document.getElementById('webmail-button').classList.add('secondary');
+                    }
+                    
+                    log('success', `User authenticated: ${data.username || data.email}`);
+                } else {
+                    throw new Error('Not authenticated');
+                }
+            } catch (error) {
+                log('error', `Failed to check auth status: ${error.message}`);
+                showAlert('error', `Authentication check failed: ${error.message}`);
+            }
+        }
+
+        // Load configuration
+        async function loadConfig() {
+            log('info', 'Loading configuration from backend...');
+            
+            try {
+                const response = await fetch(`${API_BASE}/test/oidc-stalwart/config`);
+                const data = await response.json();
+                
+                if (data.roundcubeUrl) {
+                    document.getElementById('roundcube-url').textContent = data.roundcubeUrl;
+                } else {
+                    document.getElementById('roundcube-url').textContent = 'https://webmailqa.workinpilot.cloud (default)';
+                }
+                
+                log('success', 'Configuration loaded successfully');
+            } catch (error) {
+                log('error', `Failed to load configuration: ${error.message}`);
+            }
+        }
+
+        // Redirect to webmail
+        async function redirectToWebmail(event) {
+            event.preventDefault();
+            
+            const button = document.getElementById('webmail-button');
+            if (button.disabled) {
+                showAlert('warning', 'Please ensure you are authenticated and have an access token available.');
+                return;
+            }
+            
+            log('info', 'Redirecting to Roundcube webmail...');
+            button.disabled = true;
+            button.textContent = '⏳ Redirecting...';
+            
+            try {
+                // Redirect to backend endpoint which will handle token and redirect to Roundcube
+                window.location.href = `${API_BASE}/test/keycloak-stalwart-webmail/redirect`;
+            } catch (error) {
+                log('error', `Failed to redirect: ${error.message}`);
+                showAlert('error', `Failed to redirect to webmail: ${error.message}`);
+                button.disabled = false;
+                button.textContent = '📧 Open Roundcube Webmail';
+            }
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            log('info', 'Page loaded. Checking authentication status...');
+            checkAuthStatus();
+            loadConfig();
+        });
+    </script>
+</body>
+</html>
+
