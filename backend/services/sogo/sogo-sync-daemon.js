@@ -5,7 +5,7 @@
  * and ensures they exist in SOGo's sogo_users table.
  * 
  * Only runs when:
- * - WORKINPILOT_SSO_MAIL_CLIENT_NAME=sogo AND WORKINPILOT_MAIL_PROVIDER=stalwart
+ * - DEMO_SSO_MAIL_CLIENT_NAME=sogo AND DEMO_MAIL_PROVIDER=stalwart
  * - OR SOGO_SYNC_ENABLED=true
  */
 
@@ -35,8 +35,8 @@ class SogoSyncDaemon {
   /**
    * Check if SOGo sync should be enabled
    * Requires BOTH:
-   * 1. SOGo webmail client selected (WORKINPILOT_SSO_MAIL_CLIENT_NAME=sogo)
-   * 2. Stalwart mail provider selected (WORKINPILOT_MAIL_PROVIDER=stalwart)
+   * 1. SOGo webmail client selected (DEMO_SSO_MAIL_CLIENT_NAME=sogo)
+   * 2. Stalwart mail provider selected (DEMO_MAIL_PROVIDER=stalwart)
    * 
    * OR can be explicitly enabled via SOGO_SYNC_ENABLED=true
    */
@@ -143,7 +143,7 @@ class SogoSyncDaemon {
           }
 
           const username = kcUser.username;
-          const email = kcUser.email || `${username}@${process.env.WORKINPILOT_INTERNAL_EMAIL_DOMAIN || 'workinpilot.space'}`;
+          const email = kcUser.email || `${username}@${process.env.DEMO_INTERNAL_EMAIL_DOMAIN || 'workinpilot.space'}`;
           const firstName = kcUser.firstName || '';
           const lastName = kcUser.lastName || '';
 

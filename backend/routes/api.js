@@ -107,7 +107,7 @@ function splitTitleAndBodyFromAi(rawText) {
 // Get email send defaults
 router.get('/emails/defaults-broke', ensureAuthenticated, async (req, res) => {
   try {
-    const intEmailDomain = process.env.WORKINPILOT_INTERNAL_EMAIL_DOMAIN || 'workinpilot.space';
+    const intEmailDomain = process.env.DEMO_INTERNAL_EMAIL_DOMAIN || 'workinpilot.space';
     const reqUserWipEmail = req.user.username + '@' + intEmailDomain;
     const defaultTo = 'HiringManager@' + intEmailDomain;
     
@@ -177,7 +177,7 @@ function getRemainingTime(token) {
 // Get email send defaults
 router.get('/emails/defaults', ensureAuthenticated, async (req, res) => {
   try {
-    const intEmailDomain = process.env.WORKINPILOT_INTERNAL_EMAIL_DOMAIN || 'workinpilot.space';
+    const intEmailDomain = process.env.DEMO_INTERNAL_EMAIL_DOMAIN || 'workinpilot.space';
     const reqUserWipEmail = req.user.username + '@' + intEmailDomain;
     const defaultTo = 'HiringManager@' + intEmailDomain;
     const provider = mailServiceConfig.getProvider();
@@ -248,7 +248,7 @@ router.get('/emails/defaults', ensureAuthenticated, async (req, res) => {
 router.post('/mail/verify-only', ensureAuthenticated, async (req, res) => {
   try {
     const mailService = require('../services/email/mail-service-abstraction');
-    const intEmailDomain = process.env.WORKINPILOT_INTERNAL_EMAIL_DOMAIN || 'workinpilot.space';
+    const intEmailDomain = process.env.DEMO_INTERNAL_EMAIL_DOMAIN || 'workinpilot.space';
     const email = `${req.user.username}@${intEmailDomain}`;
     console.log('[API] /api/mail/verify-only start for:', email);
     const result = await mailService.verifyMailboxExists(email);
@@ -271,7 +271,7 @@ router.post('/mail/verify-only', ensureAuthenticated, async (req, res) => {
 router.get('/system-stats', ensureAuthenticated, async (req, res) => {
   try {
     // Admin check using username comparison
-    const adminUsername = process.env.WORKINPILOT_ADMIN_USERNAME || 'sysadmin';
+    const adminUsername = process.env.DEMO_ADMIN_USERNAME || 'sysadmin';
     const isAdmin = req.user?.username === adminUsername;
     if (!isAdmin) {
       return res.status(403).json({ message: 'Forbidden' });
@@ -650,10 +650,10 @@ router.get('/test/oidc-stalwart/config', async (req, res) => {
         hasAdminClientSecret: !!process.env.KEYCLOAK_ADMIN_CLIENT_SECRET
       },
       stalwart: {
-        apiUrl: process.env.WORKINPILOT_STALWART_API_URL || (process.env.STALWART_URL ? `${process.env.STALWART_URL.replace(/\/$/, '')}/api` : null),
-        baseUrl: process.env.STALWART_URL || (process.env.WORKINPILOT_STALWART_API_URL ? process.env.WORKINPILOT_STALWART_API_URL.replace(/\/api$/, '') : null),
-        hasApiToken: !!(process.env.WORKINPILOT_STALWART_API_TOKEN || process.env.WORKINPILOT_STALWART_ADMIN_API_KEY || process.env.STALWART_API_KEY_AUTH_BEARER_TOKEN),
-        apiKeyName: process.env.WORKINPILOT_STALWART_API_KEY_NAME || process.env.STALWART_API_KEY_NAME,
+        apiUrl: process.env.DEMO_STALWART_API_URL || (process.env.STALWART_URL ? `${process.env.STALWART_URL.replace(/\/$/, '')}/api` : null),
+        baseUrl: process.env.STALWART_URL || (process.env.DEMO_STALWART_API_URL ? process.env.DEMO_STALWART_API_URL.replace(/\/api$/, '') : null),
+        hasApiToken: !!(process.env.DEMO_STALWART_API_TOKEN || process.env.DEMO_STALWART_ADMIN_API_KEY || process.env.STALWART_API_KEY_AUTH_BEARER_TOKEN),
+        apiKeyName: process.env.DEMO_STALWART_API_KEY_NAME || process.env.STALWART_API_KEY_NAME,
         clientId: process.env.STALWART_CLIENT_ID,
         hasClientSecret: !!process.env.STALWART_CLIENT_SECRET,
         redirectUri: process.env.STALWART_REDIRECT_URL
@@ -661,18 +661,18 @@ router.get('/test/oidc-stalwart/config', async (req, res) => {
       webmailClient: {
         keycloakAuthUrl: process.env.KEYCLOAK_AUTH_URL_FOR_SSO_MAIL_CLIENTS,
         keycloakRedirectUri: process.env.KEYCLOAK_SSO_MAIL_CLIENT_REDIRECT,
-        clientName: process.env.WORKINPILOT_SSO_MAIL_CLIENT_NAME,
+        clientName: process.env.DEMO_SSO_MAIL_CLIENT_NAME,
         clientId: process.env.KEYCLOAK_SSO_MAIL_CLIENT,
         clientSecret: process.env.KEYCLOAK_SSO_MAIL_CLIENT_SECRET,
-        clientUrl: process.env.WORKINPILOT_SSO_MAIL_CLIENT_URL,
-        clientRedirectUri: process.env.WORKINPILOT_SSO_MAIL_CLIENT_REDIRECT_URL,
-        clientLogoutUrl: process.env.WORKINPILOT_SSO_MAIL_CLIENT_LOGOUT_URL,
+        clientUrl: process.env.DEMO_SSO_MAIL_CLIENT_URL,
+        clientRedirectUri: process.env.DEMO_SSO_MAIL_CLIENT_REDIRECT_URL,
+        clientLogoutUrl: process.env.DEMO_SSO_MAIL_CLIENT_LOGOUT_URL,
         authUrl: process.env.KEYCLOAK_AUTH_URL_FOR_SSO_MAIL_CLIENTS
       },
-      internalEmailDomain: process.env.WORKINPILOT_INTERNAL_EMAIL_DOMAIN || 'workinpilot.space',
+      internalEmailDomain: process.env.DEMO_INTERNAL_EMAIL_DOMAIN || 'workinpilot.space',
       appUrl: process.env.APP_URL || 'http://localhost:3010',
       // Admin email defaults (can be overridden in .env)
-      adminEmail: process.env.ADMIN_EMAIL || process.env.WORKINPILOT_ADMIN_EMAIL || `admin@${process.env.WORKINPILOT_INTERNAL_EMAIL_DOMAIN || 'workinpilot.space'}`,
+      adminEmail: process.env.ADMIN_EMAIL || process.env.WORKINPILOT_ADMIN_EMAIL || `admin@${process.env.DEMO_INTERNAL_EMAIL_DOMAIN || 'workinpilot.space'}`,
       // Demo password for test users
       webmailDemoPassword: process.env.WEBMAIL_DEMO_PASSWORD || null
     });
@@ -942,7 +942,7 @@ router.post('/test/oidc-stalwart/stalwart/send-mail', async (req, res) => {
     
     // If still no sender email, use default (but this will likely fail with XOAUTH2)
     if (!senderEmail) {
-      const intEmailDomain = process.env.WORKINPILOT_INTERNAL_EMAIL_DOMAIN || 'workinpilot.space';
+      const intEmailDomain = process.env.DEMO_INTERNAL_EMAIL_DOMAIN || 'workinpilot.space';
       senderEmail = `test@${intEmailDomain}`;
       console.warn(`[api/test/oidc-stalwart/stalwart/send-mail] No sender email provided, using default: ${senderEmail} (may fail with XOAUTH2)`);
     }
@@ -1304,7 +1304,7 @@ router.post('/test/keycloak-stalwart-workflow', async (req, res) => {
         console.log(`[OIDC Workflow Test ${workflowId}] Step 1: Registering user in Keycloak`);
         try {
             const keycloakAdmin = require('../config/keycloak-admin');
-            const internalEmailDomain = process.env.WORKINPILOT_INTERNAL_EMAIL_DOMAIN || 'workinpilot.space';
+            const internalEmailDomain = process.env.DEMO_INTERNAL_EMAIL_DOMAIN || 'workinpilot.space';
             
             const username = req.body.username || `test-${Date.now()}`;
             testUser = username;
@@ -1712,7 +1712,7 @@ router.get('/test/keycloak-stalwart-config', async (req, res) => {
             success: true,
             mailService: config,
             keycloak: keycloakConfig,
-            internalEmailDomain: process.env.WORKINPILOT_INTERNAL_EMAIL_DOMAIN || 'workinpilot.space'
+            internalEmailDomain: process.env.DEMO_INTERNAL_EMAIL_DOMAIN || 'workinpilot.space'
         });
     } catch (error) {
         res.status(500).json({
@@ -1735,7 +1735,7 @@ router.get('/test/config-info', async (req, res) => {
     const config = mailService.getConfig();
     
     // Get additional environment variables for display
-    const intEmailDomain = process.env.WORKINPILOT_INTERNAL_EMAIL_DOMAIN || 'workinpilot.space';
+    const intEmailDomain = process.env.DEMO_INTERNAL_EMAIL_DOMAIN || 'workinpilot.space';
     const adminEmail = process.env.WORKINPILOT_ADMIN_EMAIL || `admin@${intEmailDomain}`;
     const keycloakUrl = process.env.KEYCLOAK_URL || 'Not configured';
     const keycloakRealm = process.env.KEYCLOAK_REALM || 'Not configured';
@@ -1749,8 +1749,8 @@ router.get('/test/config-info', async (req, res) => {
         keycloakUrl: keycloakUrl,
         keycloakRealm: keycloakRealm,
         // Include API key name if configured (for Stalwart)
-        stalwartApiKeyName: process.env.WORKINPILOT_STALWART_API_KEY_NAME || process.env.STALWART_API_KEY_NAME || null,
-        hasStalwartAdminApiKey: !!(process.env.WORKINPILOT_STALWART_ADMIN_API_KEY || process.env.STALWART_API_KEY_AUTH_BEARER_TOKEN)
+        stalwartApiKeyName: process.env.DEMO_STALWART_API_KEY_NAME || process.env.STALWART_API_KEY_NAME || null,
+        hasStalwartAdminApiKey: !!(process.env.DEMO_STALWART_ADMIN_API_KEY || process.env.STALWART_API_KEY_AUTH_BEARER_TOKEN)
       }
     });
   } catch (error) {
@@ -1781,7 +1781,7 @@ router.post('/test/oidc-workflow', async (req, res) => {
   let testUser = null;
   let testEmail = null;
   let keycloakUserId = null;
-  const intEmailDomain = process.env.WORKINPILOT_INTERNAL_EMAIL_DOMAIN || 'workinpilot.space';
+  const intEmailDomain = process.env.DEMO_INTERNAL_EMAIL_DOMAIN || 'workinpilot.space';
   const adminEmail = process.env.WORKINPILOT_ADMIN_EMAIL || `admin@${intEmailDomain}`;
 
     const keycloakAdmin = require('../config/keycloak-admin');

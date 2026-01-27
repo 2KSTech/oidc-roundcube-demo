@@ -92,7 +92,7 @@ class SogoUserService {
     
     // Use username as c_uid (primary key) - this should match what SOGo expects
     const cUid = username;
-    const cName = email || `${username}@${process.env.WORKINPILOT_INTERNAL_EMAIL_DOMAIN || 'workinpilot.space'}`;
+    const cName = email || `${username}@${process.env.DEMO_INTERNAL_EMAIL_DOMAIN || 'workinpilot.space'}`;
     const mail = email || cName;
     const cCn = [firstName, lastName].filter(Boolean).join(' ') || username;
     

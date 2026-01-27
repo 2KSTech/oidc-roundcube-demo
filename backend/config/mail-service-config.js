@@ -1,13 +1,13 @@
 /**
  * Mail Service Configuration Loader
  * 
- * Loads and manages mail service configuration based on WORKINPILOT_MAIL_PROVIDER env var.
+ * Loads and manages mail service configuration based on DEMO_MAIL_PROVIDER env var.
  * Supports both generic mailserver terminology and service-specific fallbacks.
  */
 
 class MailServiceConfig {
   constructor() {
-    this.provider = (process.env.WORKINPILOT_MAIL_PROVIDER || 'mailcow').toLowerCase();
+    this.provider = (process.env.DEMO_MAIL_PROVIDER || 'mailcow').toLowerCase();
     
     // Validate provider
     if (!['mailcow', 'stalwart'].includes(this.provider)) {
@@ -27,25 +27,25 @@ class MailServiceConfig {
     }
     
     // Load provider display label (for UI purposes, can be mixed case)
-    this.providerLabel = process.env.WORKINPILOT_MAIL_PROVIDER_LABEL || this.provider;
+    this.providerLabel = process.env.DEMO_MAIL_PROVIDER_LABEL || this.provider;
   }
 
   loadWebmailClientConfig() {
     // Get client name - normalize to lowercase for comparison (env var values should be lowercase)
     // ENV VAR RULE: Keys are UPPERCASE, values are lowercase (except *_LABEL vars for display)
-    const clientName = (process.env.WORKINPILOT_SSO_MAIL_CLIENT_NAME || 'roundcube').toLowerCase();
+    const clientName = (process.env.DEMO_SSO_MAIL_CLIENT_NAME || 'roundcube').toLowerCase();
     
     this.webmailClientName = clientName;
-    this.webmailClientUrl = process.env.WORKINPILOT_SSO_MAIL_CLIENT_URL;
-    this.webmailClientRedirectUrl = process.env.WORKINPILOT_SSO_MAIL_CLIENT_REDIRECT_URL;
-    this.webmailClientLogoutUrl = process.env.WORKINPILOT_SSO_MAIL_CLIENT_LOGOUT_URL;
+    this.webmailClientUrl = process.env.DEMO_SSO_MAIL_CLIENT_URL;
+    this.webmailClientRedirectUrl = process.env.DEMO_SSO_MAIL_CLIENT_REDIRECT_URL;
+    this.webmailClientLogoutUrl = process.env.DEMO_SSO_MAIL_CLIENT_LOGOUT_URL;
     this.webmailClientOidcClientId = process.env.KEYCLOAK_SSO_MAIL_CLIENT;
     this.webmailClientOidcClientSecret = process.env.KEYCLOAK_SSO_MAIL_CLIENT_SECRET;
     this.webmailClientOidcRedirect = process.env.KEYCLOAK_SSO_MAIL_CLIENT_REDIRECT;
     this.keycloakAuthUrlForSsoMailClients = process.env.KEYCLOAK_AUTH_URL_FOR_SSO_MAIL_CLIENTS;
     
     // Optional display label (for UI purposes only)
-    this.webmailClientLabel = process.env.WORKINPILOT_SSO_MAIL_CLIENT_LABEL || clientName;
+    this.webmailClientLabel = process.env.DEMO_SSO_MAIL_CLIENT_LABEL || clientName;
     
     // Validate required fields
     if (!this.webmailClientUrl || !this.webmailClientOidcClientId || !this.webmailClientOidcClientSecret) {
@@ -57,31 +57,31 @@ class MailServiceConfig {
 
   loadMailcowConfig() {
     // Generic variables first, fallback to mailcow-specific
-    this.apiUrl = process.env.WORKINPILOT_MAIL_API_URL 
+    this.apiUrl = process.env.DEMO_MAIL_API_URL 
       || process.env.WORKINPILOT_MAILCOW_API_URL 
       || process.env.MAILCOW_API_URL 
       || (process.env.MAILCOW_URL ? `${process.env.MAILCOW_URL.replace(/\/$/, '')}/api` : null)
       || 'https://mail.workinpilot.space/api';
     
-    this.apiToken = process.env.WORKINPILOT_MAIL_API_TOKEN
+    this.apiToken = process.env.DEMO_MAIL_API_TOKEN
       || process.env.WORKINPILOT_MAILCOW_API_TOKEN
       || process.env.MAILCOW_API_KEY;
     
-    this.smtpHost = process.env.WORKINPILOT_MAIL_SMTP_HOST
+    this.smtpHost = process.env.DEMO_MAIL_SMTP_HOST
       || process.env.MAILCOW_SMTP_HOST
       || 'mail.workinpilot.space';
     
     this.smtpPort = parseInt(
-      process.env.WORKINPILOT_MAIL_SMTP_PORT 
+      process.env.DEMO_MAIL_SMTP_PORT 
       || process.env.MAILCOW_SMTP_PORT 
       || '587'
     );
     
-    this.oidcClientId = process.env.WORKINPILOT_MAIL_OIDC_CLIENT_ID
+    this.oidcClientId = process.env.DEMO_MAIL_OIDC_CLIENT_ID
       || process.env.MAILCOW_CLIENT_ID
       || 'mailcow-client';
     
-    this.oidcClientSecret = process.env.WORKINPILOT_MAIL_OIDC_CLIENT_SECRET
+    this.oidcClientSecret = process.env.DEMO_MAIL_OIDC_CLIENT_SECRET
       || process.env.MAILCOW_CLIENT_SECRET;
     
     this.baseUrl = process.env.MAILCOW_URL || 'https://mail.workinpilot.space';
@@ -90,30 +90,30 @@ class MailServiceConfig {
   loadStalwartConfig() {
     // Generic variables first, fallback to stalwart-specific
     // Prefer public URL if available (works from browser and server-side)
-    this.apiUrl = process.env.WORKINPILOT_MAIL_API_URL
-      || process.env.WORKINPILOT_STALWART_API_URL
+    this.apiUrl = process.env.DEMO_MAIL_API_URL
+      || process.env.DEMO_STALWART_API_URL
       || (process.env.STALWART_URL ? `${process.env.STALWART_URL.replace(/\/$/, '')}/api` : null)
       || 'https://mailqa.workinpilot.cloud/api'; // Default to public URL if reverse proxy is configured
     
     // Stalwart Management API expects Bearer <token>
-    this.apiToken = process.env.WORKINPILOT_MAIL_API_TOKEN
+    this.apiToken = process.env.DEMO_MAIL_API_TOKEN
       || process.env.STALWART_API_KEY_AUTH_BEARER_TOKEN
-      || process.env.WORKINPILOT_STALWART_API_TOKEN;
+      || process.env.DEMO_STALWART_API_TOKEN;
     
-    this.smtpHost = process.env.WORKINPILOT_MAIL_SMTP_HOST
+    this.smtpHost = process.env.DEMO_MAIL_SMTP_HOST
       || process.env.STALWART_SMTP_HOST
       || 'mailqa.workinpilot.cloud'; // Use public domain for SMTP (works from anywhere)
     
     this.smtpPort = parseInt(
-      process.env.WORKINPILOT_MAIL_SMTP_PORT
+      process.env.DEMO_MAIL_SMTP_PORT
       || process.env.STALWART_SMTP_PORT
       || '587'
     );
     
-    this.oidcClientId = process.env.WORKINPILOT_MAIL_OIDC_CLIENT_ID
+    this.oidcClientId = process.env.DEMO_MAIL_OIDC_CLIENT_ID
       || process.env.STALWART_CLIENT_ID;
     
-    this.oidcClientSecret = process.env.WORKINPILOT_MAIL_OIDC_CLIENT_SECRET
+    this.oidcClientSecret = process.env.DEMO_MAIL_OIDC_CLIENT_SECRET
       || process.env.STALWART_CLIENT_SECRET;
     
     this.baseUrl = process.env.STALWART_URL || 'https://mailqa.workinpilot.cloud';

@@ -530,7 +530,7 @@ class StalwartService {
    */
   async sendMail(options) {
     try {
-      const intEmailDomain = process.env.WORKINPILOT_INTERNAL_EMAIL_DOMAIN || 'workinpilot.space';
+      const intEmailDomain = process.env.DEMO_INTERNAL_EMAIL_DOMAIN || 'workinpilot.space';
       const smtpHost = this.config.getSmtpHost();
       const smtpPort = this.config.getSmtpPort();
       
@@ -804,7 +804,7 @@ class StalwartService {
     try {
       console.log(`[StalwartService] Configuring proxy for user ${userId}: ${personalEmail}`);
       
-      const intEmailDomain = process.env.WORKINPILOT_INTERNAL_EMAIL_DOMAIN || 'workinpilot.space';
+      const intEmailDomain = process.env.DEMO_INTERNAL_EMAIL_DOMAIN || 'workinpilot.space';
       const internalEmail = `${username}@${intEmailDomain}`;
 
       // Stalwart proxy configuration may use different API endpoints
@@ -1322,7 +1322,7 @@ class StalwartService {
       // This causes Stalwart to introspect the token and create/discover the principal
       console.log('[StalwartService] Triggering Stalwart OIDC lookup via SMTP XOAUTH2...');
       
-      const intEmailDomain = process.env.WORKINPILOT_INTERNAL_EMAIL_DOMAIN || 'workinpilot.space';
+      const intEmailDomain = process.env.DEMO_INTERNAL_EMAIL_DOMAIN || 'workinpilot.space';
       const welcomeEmailResult = await this.sendMail({
         from: email,
         to: email,

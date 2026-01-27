@@ -1,5 +1,5 @@
 {
-  "name": "workinpilot-keycloak-backend",
+  "name": "oidc-roundcube-demo-backend",
   "version": "1.0.0",
   "description": "Keycloak authentication backend for WorkInPilot",
   "main": "server.js",

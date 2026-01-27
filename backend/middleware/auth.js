@@ -34,7 +34,7 @@ module.exports = {
       req.session.returnTo = req.originalUrl;
       return res.redirect('/auth/login');
     }
-    const adminUsername = process.env.WORKINPILOT_ADMIN_USERNAME || 'sysadmin';
+    const adminUsername = process.env.DEMO_ADMIN_USERNAME || 'sysadmin';
     const isAdmin = req.user?.username === adminUsername;
     if (!isAdmin) {
       return res.status(403).render('error', {

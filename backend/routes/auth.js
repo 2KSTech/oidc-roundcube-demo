@@ -7,13 +7,13 @@ const tokenService = require('../services/tokenService');
 const router = express.Router();
 
 // Service base URLs derived from environment, avoiding hardcoded domains
-const internalDomain = process.env.WORKINPILOT_INTERNAL_EMAIL_DOMAIN || 'workinpilot.space';
+const internalDomain = process.env.DEMO_INTERNAL_EMAIL_DOMAIN || 'workinpilot.space';
 const nextcloudBase = process.env.NEXTCLOUD_URL;
 const mailBase = process.env.MAILCOW_URL;
 
 // Admin helper function
 const checkIsAdmin = (req) => {
-  const adminUsername = process.env.WORKINPILOT_ADMIN_USERNAME || 'sysadmin';
+  const adminUsername = process.env.DEMO_ADMIN_USERNAME || 'sysadmin';
   return req.user?.username === adminUsername;
 };
 
@@ -146,7 +146,7 @@ router.get('/mail', async (req, res) => {
   console.log(`[auth.js - mail] ${providerLabel} ${isSetupRequest ? 'setup' : 'access'} initiated for user:`, req.user.username);
   console.log(`[auth.js - mail] Webmail client: ${webmailClientLabel} (${webmailClientName})`);
   
-  const intEmailDomain = process.env.WORKINPILOT_INTERNAL_EMAIL_DOMAIN || 'workinpilot.space';
+  const intEmailDomain = process.env.DEMO_INTERNAL_EMAIL_DOMAIN || 'workinpilot.space';
   const userEmail = `${req.user.username}@${intEmailDomain}`;
   req.user.email = userEmail;
   
@@ -360,63 +360,6 @@ router.get('/logout-simple', async (req, res) => {
       res.redirect(loginUrl);
     });
   });
-});
-
-// Federated logout across OIDC-enabled apps (front-channel orchestration)
-// Uses Keycloak end-session, then calls service logout URLs via hidden iframes
-router.get('/logout-all', async (req, res) => {
-  if (!req.isAuthenticated()) {
-    return res.redirect('/auth/login');
-  }
-
-
-
-  // const ncLogout = process.env.NEXTCLOUD_LOGOUT_URL || '';
-  // Resolve Mail logout URL with user/email placeholders
-  const mailTpl = process.env.MAILCOW_LOGOUT_URL_TEMPLATE || process.env.MAILCOW_LOGOUT_URL || '';
-  const userEmail = req.user?.email || '';
-  const userLocal = userEmail.split('@')[0] || '';
-  const mailLogout = mailTpl
-    .replace(/\$\{USER\}/g, userLocal)
-    .replace(/\$\{EMAIL\}/g, userEmail)
-    .replace(/\{user\}/g, userLocal)
-    .replace(/\{email\}/g, userEmail);
-
-
-  const html = `<!doctype html><html><head><meta charset="utf-8"><title>Signing out…</title>
-  <style>
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;margin:0;background:linear-gradient(135deg, #090c9b 0%, #3066be 50%, #b4c5e4 100%);color:#1f2937;min-height:100vh}
-    .backdrop{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:24px}
-    .modal{background:rgba(255,255,255,0.95);backdrop-filter:blur(10px);box-shadow:0 8px 32px rgba(0,0,0,0.1);border-radius:15px;max-width:560px;width:100%;overflow:hidden;border:1px solid rgba(255,255,255,0.2)}
-    .modal-header{padding:16px 20px;border-bottom:1px solid #f0f1f3;font-weight:600;font-size:16px}
-    .modal-body{padding:14px 20px 6px 20px}
-    .summary{margin:0 0 10px 0;font-weight:600;color:#111827}
-    .details{font-size:14px;color:#374151}
-    .row{margin:8px 0}
-    .foot{padding:10px 20px 16px 20px;border-top:1px solid #f0f1f3;color:#6b7280;font-size:12px}
-  </style>
-  </head><body>
-  <div class="backdrop">
-    <div class="modal" role="dialog" aria-modal="true" aria-label="Logout progress">
-      <div class="modal-header">Signing you out…</div>
-      <div class="modal-body">
-        <div class="summary">${ncCleanupSummary}</div>
-        <div class="details">
-          ${mailLogout ? '<div class="row">Mail: logout prepared</div>' : ''}
-          ${ncLogout ? '<div class="row">Nextcloud: logout prepared</div>' : ''}
-          ${ncTokenCleanupStatus}
-          <div class="row">Identity provider (Keycloak): next…</div>
-        </div>
-      </div>
-      <div class="foot">This window will move through logout steps automatically…</div>
-    </div>
-  </div>
-  <script>setTimeout(function(){ window.location.href = ${JSON.stringify(mailLogout.toString())}; }, 1200);</script>
-  <script>setTimeout(function(){ window.location.href = ${JSON.stringify(ncLogout.toString())}; }, 1200);</script>
-  <script>setTimeout(function(){ window.location.href = ${JSON.stringify(kcLogout.toString())}; }, 1200);</script>
-  </body></html>`;
-  res.setHeader('Content-Type', 'text/html; charset=utf-8');
-  res.send(html);
 });
 
 // After IDP logout, front-channel logout other services via iframes then redirect

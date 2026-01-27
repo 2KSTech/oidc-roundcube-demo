@@ -29,14 +29,14 @@ RUN('Stalwart Pre-deploy via REST (live)', () => {
 
   beforeAll(() => {
     // Resolve Management API base URL
-    apiBaseUrl = process.env.WORKINPILOT_MAIL_API_URL
-      || process.env.WORKINPILOT_STALWART_API_URL
+    apiBaseUrl = process.env.DEMO_MAIL_API_URL
+      || process.env.DEMO_STALWART_API_URL
       || (process.env.STALWART_URL ? `${process.env.STALWART_URL.replace(/\/$/, '')}/api` : null)
       || 'https://mailqa.workinpilot.cloud/api';
 
     // Resolve API token - always use Bearer format per Stalwart docs
-    apiToken = process.env.WORKINPILOT_MAIL_API_TOKEN
-      || process.env.WORKINPILOT_STALWART_API_TOKEN
+    apiToken = process.env.DEMO_MAIL_API_TOKEN
+      || process.env.DEMO_STALWART_API_TOKEN
       || process.env.STALWART_API_KEY_AUTH_BEARER_TOKEN;
 
     const headers = apiToken ? {
@@ -58,7 +58,7 @@ RUN('Stalwart Pre-deploy via REST (live)', () => {
   });
 
   test('pre-deploy create principal then fetch it (POST /principal -> GET /principal/{id})', async () => {
-    const domain = process.env.WORKINPILOT_INTERNAL_EMAIL_DOMAIN || 'workinpilot.space';
+    const domain = process.env.DEMO_INTERNAL_EMAIL_DOMAIN || 'workinpilot.space';
     const stamp = Date.now();
     const username = `predeploy_${stamp}`;
     const email = `${username}@${domain}`;

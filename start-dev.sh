@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "INFO: Starting WorkInPilot Keycloak-Stalwart-Roundcube SSO Demo..."
+echo "INFO: Starting 2KS Keycloak-Stalwart-Roundcube SSO Demo..."
 
 # Check if backend is running
 #if pgrep -f "node server.js" > /dev/null; then

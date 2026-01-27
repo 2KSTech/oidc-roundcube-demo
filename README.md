@@ -13,9 +13,9 @@ This project integrates Keycloak authentication with the Stalwart mail server an
 ```
 oidc-roundcube-demo/
 ├── backend/               # Express authentication server
-│   ├── con            # Envbase and Passport configuration
-│   ├── middlew        # Au# Authentication middleware
-│   ├── rou            # Ex# Express routes
+│   ├── config            # Envbase and Passport configuration
+│   ├── middleware        # Au# Authentication middleware
+│   ├── routes            # Ex# Express routes
 │   ── server.          
 └── ...
 ```

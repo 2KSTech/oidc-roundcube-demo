@@ -12,13 +12,13 @@ require('dotenv').config({ path: './backend/.env' });
 const axios = require('axios');
 const nodemailer = require('nodemailer');
 
-const BASE_URL = process.env.WORKINPILOT_STALWART_API_URL?.replace(/\/api$/, '') 
+const BASE_URL = process.env.DEMO_STALWART_API_URL?.replace(/\/api$/, '') 
   || process.env.STALWART_URL 
   || 'https://mailqa.workinpilot.cloud';
 const API_URL = `${BASE_URL}/api`;
-const API_KEY = process.env.WORKINPILOT_STALWART_API_TOKEN 
-  || process.env.WORKINPILOT_MAIL_API_TOKEN;
-const DOMAIN = process.env.WORKINPILOT_INTERNAL_EMAIL_DOMAIN || 'workinpilot.space';
+const API_KEY = process.env.DEMO_STALWART_API_TOKEN 
+  || process.env.DEMO_MAIL_API_TOKEN;
+const DOMAIN = process.env.DEMO_INTERNAL_EMAIL_DOMAIN || 'workinpilot.space';
 
 // Test user
 const USERNAME = process.argv[2] || 'testuser';

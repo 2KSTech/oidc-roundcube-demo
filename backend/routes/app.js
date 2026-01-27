@@ -37,7 +37,7 @@ router.get('/error', (req, res) => {
 
 // Admin helper function
 const checkIsAdmin = (req) => {
-  const adminUsername = process.env.WORKINPILOT_ADMIN_USERNAME || 'sysadmin';
+  const adminUsername = process.env.DEMO_ADMIN_USERNAME || 'sysadmin';
   return req.user?.username === adminUsername;
 };
 

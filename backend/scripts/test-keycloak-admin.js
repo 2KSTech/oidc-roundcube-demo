@@ -30,8 +30,8 @@ async function main() {
   // Generate test data similar to Cypress
   const ts = Date.now();
   const username = process.env.TEST_USERNAME || process.env.CYPRESS_TEST_USERNAME || `test${ts}`;
-  const firstName = process.env.FIRST_NAME || process.env.CYPRESS_FIRST_NAME || username;
-  const lastName = process.env.LAST_NAME || process.env.CYPRESS_LAST_NAME || 'User';
+  const firstName = process.env.TEST_FIRST_NAME || process.env.CYPRESS_FIRST_NAME || username;
+  const lastName = process.env.TEST_LAST_NAME || process.env.CYPRESS_LAST_NAME || 'User';
   const domain = process.env.TEST_EMAIL_DOMAIN || 'workinpilot.xyz';
   const email = process.env.TEST_EMAIL || process.env.CYPRESS_TEST_EMAIL || `${username}@${domain}`;
   const defaultTestSecret = process.env.TEST_SECRET || process.env.CYPRESS_TEST_PASSWORD;

@@ -37,7 +37,7 @@ class MailboxProxyConfigService {
         };
       }
 
-      const intEmailDomain = process.env.WORKINPILOT_INTERNAL_EMAIL_DOMAIN || 'workinpilot.space';
+      const intEmailDomain = process.env.DEMO_INTERNAL_EMAIL_DOMAIN || 'workinpilot.space';
       const internalEmail = `${username}@${intEmailDomain}`;
 
       const results = {

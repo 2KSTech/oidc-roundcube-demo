@@ -16,9 +16,9 @@ describe('Mail service features - focused proofs', () => {
   });
 
   test('deleteMailbox() via abstraction calls provider implementation (stalwart)', async () => {
-    process.env.WORKINPILOT_MAIL_PROVIDER = 'stalwart';
-    process.env.WORKINPILOT_MAIL_API_URL = 'http://localhost:8082/api';
-    process.env.WORKINPILOT_MAIL_API_TOKEN = 'test-token';
+    process.env.DEMO_MAIL_PROVIDER = 'stalwart';
+    process.env.DEMO_MAIL_API_URL = 'http://localhost:8082/api';
+    process.env.DEMO_MAIL_API_TOKEN = 'test-token';
 
     // Load the real stalwart-client singleton and monkey-patch its methods
     const stalwartClient = require('../../services/email/stalwart-client');
@@ -43,9 +43,9 @@ describe('Mail service features - focused proofs', () => {
   });
 
   test('stalwart-client.getPrincipal unwraps { data: {...} } correctly', async () => {
-    process.env.WORKINPILOT_MAIL_PROVIDER = 'stalwart';
-    process.env.WORKINPILOT_MAIL_API_URL = 'http://localhost:8082/api';
-    process.env.WORKINPILOT_MAIL_API_TOKEN = 'test-token';
+    process.env.DEMO_MAIL_PROVIDER = 'stalwart';
+    process.env.DEMO_MAIL_API_URL = 'http://localhost:8082/api';
+    process.env.DEMO_MAIL_API_TOKEN = 'test-token';
 
     const client = require('../../services/email/stalwart-client');
     expect(client.isConfigured()).toBe(true);

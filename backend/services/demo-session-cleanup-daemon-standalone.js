@@ -15,8 +15,8 @@
  *   - KEYCLOAK_REALM
  *   - KEYCLOAK_ADMIN_CLIENT_ID
  *   - KEYCLOAK_ADMIN_CLIENT_SECRET
- *   - WORKINPILOT_SSO_MAIL_CLIENT_NAME (sogo or roundcube)
- *   - WORKINPILOT_MAIL_PROVIDER (stalwart)
+ *   - DEMO_SSO_MAIL_CLIENT_NAME (sogo or roundcube)
+ *   - DEMO_MAIL_PROVIDER (stalwart)
  *   - ROUNDCUBE_DB_* or SOGO_DB_* (depending on webmail client)
  */
 

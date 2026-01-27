@@ -4,14 +4,14 @@ require('dotenv').config();
 (async () => {
   try {
     // Get config from environment
-    const apiUrl = process.env.WORKINPILOT_MAIL_API_URL 
-      || process.env.WORKINPILOT_STALWART_API_URL 
+    const apiUrl = process.env.DEMO_MAIL_API_URL 
+      || process.env.DEMO_STALWART_API_URL 
       || (process.env.STALWART_URL ? `${process.env.STALWART_URL.replace(/\/$/, '')}/api` : null);
     
-    const apiToken = process.env.WORKINPILOT_MAIL_API_TOKEN 
+    const apiToken = process.env.DEMO_MAIL_API_TOKEN 
       || process.env.STALWART_API_KEY_AUTH_BEARER_TOKEN;
     
-    const domain = process.env.WORKINPILOT_INTERNAL_EMAIL_DOMAIN || 'workinpilot.space';
+    const domain = process.env.DEMO_INTERNAL_EMAIL_DOMAIN || 'workinpilot.space';
     
     if (!apiUrl || !apiToken) {
       console.error('FAIL Missing API URL or token');

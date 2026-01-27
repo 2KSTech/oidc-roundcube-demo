@@ -50,7 +50,7 @@ class MailcowService {
    */
   async sendMail(options) {
     try {
-      const intEmailDomain = process.env.WORKINPILOT_INTERNAL_EMAIL_DOMAIN || 'workinpilot.space';
+      const intEmailDomain = process.env.DEMO_INTERNAL_EMAIL_DOMAIN || 'workinpilot.space';
       const smtpHost = this.config.getSmtpHost();
       const smtpPort = this.config.getSmtpPort();
       const senderEmail = options.from || `mailadmin@${intEmailDomain}`;

@@ -1,26 +1,25 @@
 #!/usr/bin/env node
 
 /**
- * WorkInPilot Application Diagnostic Tool
+ * Application Diagnostic Tool
  * 
  * This script performs comprehensive diagnostics on the application:
  * - Environment variable validation
- * - Database connectivity checks
+ * - Mailclient database config string
  * - Keycloak configuration verification
- * - Service integration validation
+ * - Mail Service integration validation
  * - File system checks
  */
 
 const fs = require('fs');
 const path = require('path');
-const sqlite3 = require('sqlite3').verbose();
 const dotenv = require('dotenv');
 
 // Load environment variables
 dotenv.config({ path: path.join(__dirname, '.env') });
 
-console.log('INFO: WorkInPilot Application Diagnostic Tool');
-console.log('==========================================\n');
+console.log('INFO: Application Diagnostic Tool');
+console.log('=================================\n');
 
 // Color codes for output
 const colors = {
@@ -60,17 +59,29 @@ const requiredEnvVars = [
   'KEYCLOAK_URL',
   'KEYCLOAK_REALM',
   'KEYCLOAK_CLIENT_ID',
-  'KEYCLOAK_CLIENT_SECRET',
+  'KEYCLOAK_ADMIN_URL',
+  'KEYCLOAK_ADMIN_REALM',
+  'KEYCLOAK_ADMIN_CLIENT_ID',
+  'KEYCLOAK_ADMIN_CLIENT_SECRET',
+  'DEMO_MAIL_PROVIDER',
+  'STALWART_CLIENT_ID',
+  'STALWART_CLIENT_SECRET',
+  'DEMO_SSO_MAIL_CLIENT_NAME',
+  'DEMO_SSO_MAIL_CLIENT_URL',
+  'ROUNDCUBE_DB_HOST',
+  'ROUNDCUBE_DB_NAME',
+  'KEYCLOAK_SSO_MAIL_CLIENT',
+  'KEYCLOAK_SSO_MAIL_CLIENT_SECRET',
+  'KEYCLOAK_SSO_MAIL_CLIENT_REDIRECT',
   'APP_URL',
   'SESSION_SECRET'
 ];
 
 const optionalEnvVars = [
-  'MAILCOW_URL',
-  'MAILCOW_CLIENT_ID',
-  'MAILCOW_CLIENT_SECRET',
-  'DB_PATH',
-  'NODE_ENV'
+  'NODE_ENV',
+  'LOG_LEVEL',
+  'LOG_FILE',
+  'DEBUG'
 ];
 
 let envErrors = 0;
@@ -164,85 +175,6 @@ function finalizeSummary() {
 }
 
 // 3. Database Connectivity Check
-logSection('Database Connectivity Check');
-
-const dbPath = process.env.DB_PATH || './database.sqlite';
-const fullDbPath = path.isAbsolute(dbPath) ? dbPath : path.join(__dirname, dbPath);
-
-if (fs.existsSync(fullDbPath)) {
-  logSuccess(`Database file exists at ${dbPath}`);
-  
-  // Try to connect to database
-  try {
-    const db = new sqlite3.Database(fullDbPath);
-    
-    db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='users'", (err, row) => {
-      if (err) {
-        logError(`Database connection failed: ${err.message}`);
-        dbErrors++;
-        finalizeSummary();
-      } else if (row) {
-        logSuccess('Database connection successful');
-        logSuccess('Users table exists');
-
-        // Check for other important tables and aggregate results before summary
-        const tables = ['user_activities', 'user_account', 'workinpilot_application', 'profiles', 'resumes', 'jobs', 'applications'];
-        const critical = new Set(['user_activities', 'user_account']);
-        let pending = tables.length;
-        tables.forEach(tableName => {
-          db.get(`SELECT name FROM sqlite_master WHERE type='table' AND name='${tableName}'`, (terr, trow) => {
-            if (trow) {
-              logSuccess(`${tableName} table exists`);
-            } else {
-              if (critical.has(tableName)) {
-                logError(`${tableName} table is missing`);
-                dbErrors++;
-              } else {
-                logWarning(`${tableName} table is missing`);
-                dbWarnings++;
-              }
-            }
-            pending--;
-            if (pending === 0) {
-              db.close();
-              finalizeSummary();
-            }
-          });
-        });
-
-        // Fire-and-forget: activity type CHECK constraint integrity (doesn't affect totals)
-        db.get("SELECT sql FROM sqlite_master WHERE type='table' AND name='user_activities'", (cerr, crow) => {
-          if (!cerr && crow && crow.sql) {
-            const required = [
-              'login','logout','profile_view','profile_edit','resume_created','resume_edited','job_applied','job_viewed',
-              'application_initiated','course_enrolled','course_completed','interview_scheduled','interview_completed','skill_added','skill_updated',
-              'service_access','application_prepared','email_test','email_sent'
-            ];
-            const missing = required.filter(t => !crow.sql.includes(`'${t}'`));
-            if (missing.length === 0) {
-              logSuccess('user_activities CHECK constraint includes all required activity types');
-            } else {
-              logWarning(`user_activities CHECK constraint missing: ${missing.join(', ')}`);
-            }
-          }
-        });
-
-      } else {
-        logError('Users table is missing');
-        dbErrors++;
-        finalizeSummary();
-      }
-    });
-  } catch (error) {
-    logError(`Database connection error: ${error.message}`);
-    dbErrors++;
-    finalizeSummary();
-  }
-} else {
-  logError(`Database file not found at ${dbPath}`);
-  dbErrors++;
-  finalizeSummary();
-}
 
 // 4. Keycloak Configuration Check
 logSection('Keycloak Configuration Check');
@@ -275,14 +207,14 @@ if (process.env.KEYCLOAK_CLIENT_SECRET) {
 logSection('Service Integration Check');
 
 
-// MailCow configuration
-if (process.env.MAILCOW_URL && process.env.MAILCOW_CLIENT_ID && process.env.MAILCOW_CLIENT_SECRET) {
-  logSuccess('MailCow integration is fully configured');
+// Mail configuration
+if (process.env.DEMO_MAIL_PROVIDER && process.env.DEMO_MAIL_API_KEY_NAME && process.env.DEMO_MAIL_API_TOKEN) {
+  logSuccess('Mail backend is configured');
 } else {
-  logWarning('MailCow integration is partially configured');
-  if (!process.env.MAILCOW_URL) logWarning('MAILCOW_URL not set');
-  if (!process.env.MAILCOW_CLIENT_ID) logWarning('MAILCOW_CLIENT_ID not set');
-  if (!process.env.MAILCOW_CLIENT_SECRET) logWarning('MAILCOW_CLIENT_SECRET not set');
+  logWarning('Mail integration is partially configured');
+  if (!process.env.DEMO_MAIL_PROVIDER) logWarning('DEMO_MAIL_PROVIDER not set');
+  if (!process.env.DEMO_MAIL_API_KEY_NAME) logWarning('DEMO_MAIL_API_KEY_NAME not set');
+  if (!process.env.DEMO_MAIL_API_TOKEN) logWarning('DEMO_MAIL_API_TOKEN not set');
 }
 
 // 6. Node.js and Dependencies Check

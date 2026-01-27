@@ -57,13 +57,13 @@ The test automatically uses configuration from your `.env` file:
 - `KEYCLOAK_REALM` - Keycloak realm name
 - `KEYCLOAK_ADMIN_CLIENT_ID` - Keycloak admin client ID (for user management)
 - `KEYCLOAK_ADMIN_CLIENT_SECRET` - Keycloak admin client secret
-- `WORKINPILOT_MAIL_PROVIDER` - Set to "stalwart" for Stalwart testing
-- `WORKINPILOT_STALWART_API_URL` - Stalwart API URL
-- `WORKINPILOT_STALWART_API_TOKEN` - Stalwart API token (or use `WORKINPILOT_STALWART_ADMIN_API_KEY`)
-- `WORKINPILOT_STALWART_API_KEY_NAME` - Stalwart API key name (if using API key authentication)
+- `DEMO_MAIL_PROVIDER` - Set to "stalwart" for Stalwart testing
+- `DEMO_STALWART_API_URL` - Stalwart API URL
+- `DEMO_STALWART_API_TOKEN` - Stalwart API token (or use `DEMO_STALWART_ADMIN_API_KEY`)
+- `DEMO_STALWART_API_KEY_NAME` - Stalwart API key name (if using API key authentication)
 - `STALWART_CLIENT_ID` - Stalwart OIDC client ID (for OAuth token acquisition)
 - `STALWART_CLIENT_SECRET` - Stalwart OIDC client secret
-- `WORKINPILOT_INTERNAL_EMAIL_DOMAIN` - Internal email domain (defaults to `workinpilot.space`)
+- `DEMO_INTERNAL_EMAIL_DOMAIN` - Internal email domain (defaults to `workinpilot.space`)
 
 ### Optional Environment Variables
 
@@ -76,7 +76,7 @@ The test automatically uses configuration from your `.env` file:
 The test uses the mail service abstraction layer (`mail-service-abstraction.js`) which:
 
 - Automatically selects the configured mail provider (Stalwart or Mailcow)
-- Uses the appropriate service implementation based on `WORKINPILOT_MAIL_PROVIDER`
+- Uses the appropriate service implementation based on `DEMO_MAIL_PROVIDER`
 - Provides a unified interface for all mail operations
 
 ## Test Results
@@ -172,8 +172,8 @@ The test attempts to acquire an OAuth token using the resource owner password cr
    - Verify the client has `realm-management: manage-users` permission
 
 2. **Stalwart API Not Accessible**
-   - Check `WORKINPILOT_STALWART_API_URL` is correct
-   - Verify API token is valid (`WORKINPILOT_STALWART_API_TOKEN` or `WORKINPILOT_STALWART_ADMIN_API_KEY`)
+   - Check `DEMO_STALWART_API_URL` is correct
+   - Verify API token is valid (`DEMO_STALWART_API_TOKEN` or `DEMO_STALWART_ADMIN_API_KEY`)
    - Ensure reverse proxy is configured if using public URL
 
 3. **OAuth Token Acquisition Fails**

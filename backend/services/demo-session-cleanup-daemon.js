@@ -398,7 +398,7 @@ class DemoSessionCleanupDaemon {
         // Note: Roundcube stores email addresses in the 'username' column (not usernames!)
         // So we must use kcUser.email for Roundcube operations, not kcUser.username
         let existsInWebmail = false;
-        const userEmail = kcUser.email || `${kcUser.username}@${process.env.WORKINPILOT_INTERNAL_EMAIL_DOMAIN || 'workinpilot.space'}`;
+        const userEmail = kcUser.email || `${kcUser.username}@${process.env.DEMO_INTERNAL_EMAIL_DOMAIN || 'workinpilot.space'}`;
 
         try {
             console.log(`[DemoSessionCleanupDaemon] Checking if user ${kcUser.username} (email: ${userEmail}) exists in Roundcube...`);
@@ -427,7 +427,7 @@ class DemoSessionCleanupDaemon {
      */
     async deleteUser(kcUser) {
         const username = kcUser.username;
-        const email = kcUser.email || `${username}@${process.env.WORKINPILOT_INTERNAL_EMAIL_DOMAIN || 'workinpilot.space'}`;
+        const email = kcUser.email || `${username}@${process.env.DEMO_INTERNAL_EMAIL_DOMAIN || 'workinpilot.space'}`;
         const results = {
             keycloak: null,
             stalwart: null,
