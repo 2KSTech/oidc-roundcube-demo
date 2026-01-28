@@ -18,10 +18,13 @@ else
 fi
 
 echo ""
-echo "OK Servers are starting up..."
+echo "OK Server(s) are starting up..."
 echo ""
-echo "The application will be available at:"
-echo "- Backend: https://web.workinpilot.cloud"
+echo "If you already configured 'your-demo.example.com',"
+echo "secure domain to serve demo app over https via local port 3010,"
+echo "then the demo application will be available at:"
+echo ""
+echo "- Backend: https://your-demo.example.com"
 echo ""
 echo "Press Ctrl+C to stop all servers"
 echo ""

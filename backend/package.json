@@ -1,7 +1,7 @@
 {
   "name": "oidc-roundcube-demo-backend",
   "version": "1.0.0",
-  "description": "Keycloak authentication backend for WorkInPilot",
+  "description": "Keycloak-Stalwart-Roundcube demo app by 2KS Technologies",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
