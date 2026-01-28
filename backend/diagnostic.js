@@ -234,7 +234,6 @@ if (fs.existsSync(packageJsonPath)) {
       'express',
       'passport',
       'passport-keycloak-oauth2-oidc',
-      'sqlite3',
       'ejs',
       'express-session',
       'dotenv'
