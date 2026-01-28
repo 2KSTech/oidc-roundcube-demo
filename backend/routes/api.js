@@ -672,7 +672,7 @@ router.get('/test/oidc-stalwart/config', async (req, res) => {
       internalEmailDomain: process.env.DEMO_INTERNAL_EMAIL_DOMAIN || 'workinpilot.space',
       appUrl: process.env.APP_URL || 'http://localhost:3010',
       // Admin email defaults (can be overridden in .env)
-      adminEmail: process.env.ADMIN_EMAIL || process.env.WORKINPILOT_ADMIN_EMAIL || `admin@${process.env.DEMO_INTERNAL_EMAIL_DOMAIN || 'workinpilot.space'}`,
+      adminEmail: process.env.ADMIN_EMAIL || process.env.DEMO_ADMIN_EMAIL || `admin@${process.env.DEMO_INTERNAL_EMAIL_DOMAIN || 'workinpilot.space'}`,
       // Demo password for test users
       webmailDemoPassword: process.env.WEBMAIL_DEMO_PASSWORD || null
     });
@@ -1736,7 +1736,7 @@ router.get('/test/config-info', async (req, res) => {
     
     // Get additional environment variables for display
     const intEmailDomain = process.env.DEMO_INTERNAL_EMAIL_DOMAIN || 'workinpilot.space';
-    const adminEmail = process.env.WORKINPILOT_ADMIN_EMAIL || `admin@${intEmailDomain}`;
+    const adminEmail = process.env.DEMO_ADMIN_EMAIL || `admin@${intEmailDomain}`;
     const keycloakUrl = process.env.KEYCLOAK_URL || 'Not configured';
     const keycloakRealm = process.env.KEYCLOAK_REALM || 'Not configured';
     
@@ -1782,7 +1782,7 @@ router.post('/test/oidc-workflow', async (req, res) => {
   let testEmail = null;
   let keycloakUserId = null;
   const intEmailDomain = process.env.DEMO_INTERNAL_EMAIL_DOMAIN || 'workinpilot.space';
-  const adminEmail = process.env.WORKINPILOT_ADMIN_EMAIL || `admin@${intEmailDomain}`;
+  const adminEmail = process.env.DEMO_ADMIN_EMAIL || `admin@${intEmailDomain}`;
 
     const keycloakAdmin = require('../config/keycloak-admin');
     const mailService = require('../services/email/mail-service-abstraction');

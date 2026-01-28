@@ -58,13 +58,13 @@ class MailServiceConfig {
   loadMailcowConfig() {
     // Generic variables first, fallback to mailcow-specific
     this.apiUrl = process.env.DEMO_MAIL_API_URL 
-      || process.env.WORKINPILOT_MAILCOW_API_URL 
+      || process.env.DEMO_MAILCOW_API_URL 
       || process.env.MAILCOW_API_URL 
       || (process.env.MAILCOW_URL ? `${process.env.MAILCOW_URL.replace(/\/$/, '')}/api` : null)
       || 'https://mail.workinpilot.space/api';
     
     this.apiToken = process.env.DEMO_MAIL_API_TOKEN
-      || process.env.WORKINPILOT_MAILCOW_API_TOKEN
+      || process.env.DEMO_MAILCOW_API_TOKEN
       || process.env.MAILCOW_API_KEY;
     
     this.smtpHost = process.env.DEMO_MAIL_SMTP_HOST

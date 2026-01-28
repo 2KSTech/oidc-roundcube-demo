@@ -35,10 +35,10 @@ function timedFetch(url, timeoutMs = 5000) {
 // JSON health endpoints
 router.get('/health/json', ensureAdmin, async (req, res) => {
   try {
-    if (process.env.WORKINPILOT_HEALTHCHECK_ENABLED !== 'true') {
+    if (process.env.DEMO_HEALTHCHECK_ENABLED !== 'true') {
       return res.status(200).json({ enabled: false });
     }
-    const timeoutMs = parseInt(process.env.WORKINPILOT_HEALTHCHECK_TIMEOUT_MS || '5000', 10);
+    const timeoutMs = parseInt(process.env.DEMO_HEALTHCHECK_TIMEOUT_MS || '5000', 10);
     const checks = {};
 
     // System

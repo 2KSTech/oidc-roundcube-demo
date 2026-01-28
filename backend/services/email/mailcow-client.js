@@ -2,10 +2,10 @@ const axios = require('axios');
 
 class MailcowClient {
   constructor() {
-    const explicitApiUrl = process.env.WORKINPILOT_MAILCOW_API_URL || process.env.MAILCOW_API_URL;
+    const explicitApiUrl = process.env.DEMO_MAILCOW_API_URL || process.env.MAILCOW_API_URL;
     const baseFromMailcowUrl = (process.env.MAILCOW_URL || '').replace(/\/$/, '');
     this.apiBaseUrl = (explicitApiUrl || (baseFromMailcowUrl ? `${baseFromMailcowUrl}/api` : 'https://mail.workinpilot.space/api'));
-    this.apiKey = process.env.WORKINPILOT_MAILCOW_API_TOKEN || process.env.MAILCOW_API_KEY;
+    this.apiKey = process.env.DEMO_MAILCOW_API_TOKEN || process.env.MAILCOW_API_KEY;
     this.http = axios.create({
       baseURL: this.apiBaseUrl,
       timeout: 7000,

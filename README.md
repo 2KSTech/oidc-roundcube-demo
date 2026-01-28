@@ -16,7 +16,7 @@ oidc-roundcube-demo/
 │   ├── config            # Envbase and Passport configuration
 │   ├── middleware        # Au# Authentication middleware
 │   ├── routes            # Ex# Express routes
-│   ── server.          
+│   ── server          
 └── ...
 ```
 
@@ -36,7 +36,7 @@ oidc-roundcube-demo/
 
 3. Configure environment variables:
    ```bash
-   cp .env.example .env
+   cp config.env.template .env
    ```
 
 4. Edit `.env` with your Keycloak configuration:
@@ -106,6 +106,8 @@ Using your Keycloak client configs, setup your Stalwart and Roundcube configs fo
 
 ## Run
 
-````
+```
+bash setup.sh
+bash node backend/diagnostic.sh
 bash start-dev.sh
 ```
